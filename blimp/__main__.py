@@ -26,9 +26,7 @@ bot = Blimp(
     suffix="!",
     database_path=config["database"]["path"],
     case_insensitive=True,
-    activity=discord.Activity(
-        type=discord.ActivityType.watching, name="from far above"
-    ),
+    activity=Blimp.random_status(),
 )
 for cog in [cogs.RoleKiosk, cogs.Objects]:
     bot.add_cog(cog(bot))

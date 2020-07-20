@@ -1,7 +1,9 @@
 import logging
+import random
 import sqlite3
 
 import discord
+from discord import Activity, ActivityType
 from discord.ext import commands
 
 from context import BlimpContext
@@ -37,6 +39,18 @@ class Blimp(commands.Bot):
 
     async def get_context(self, message, *, cls=BlimpContext):
         return await super().get_context(message, cls=cls)
+
+    @staticmethod
+    def random_status() -> Activity:
+        return random.choice(
+            [
+                Activity(type=ActivityType.watching, name="from far above"),
+                Activity(
+                    type=ActivityType.playing,
+                    name="awfully bold of you to fly the Good Year blimp on a year that has been extremely bad thus far",
+                ),
+            ]
+        )
 
     @staticmethod
     def dynamic_prefix(bot, msg: discord.Message) -> str:

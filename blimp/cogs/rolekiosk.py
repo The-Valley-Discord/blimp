@@ -5,14 +5,14 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import UserInputError
 
-from bot import BlimpCog, Blimp
+from bot import BlimpCog
 from context import BlimpContext
 from converters import MaybeAliasedMessage
 
 
 class RoleKiosk(BlimpCog):
     """
-    Reaction-based role assignments
+    Handing out fancy badges.
     """
 
     @commands.group()
@@ -63,7 +63,7 @@ class RoleKiosk(BlimpCog):
             await msg.add_reaction(emoji)
 
         ctx.database.execute(
-            "INSERT OR REPLACE INTO rolekiosk_entries(oid, data) VALUES(:oid,:data)",
+            "INSERT OR REPLACE INTO rolekiosk_entries(oid, data) VALUES(:oid,json(:data))",
             {
                 "oid": ctx.objects.make_object({"m": [msg.channel.id, msg.id]}),
                 "data": json.dumps(result),

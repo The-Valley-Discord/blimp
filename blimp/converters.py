@@ -12,7 +12,7 @@ class MaybeAliasedMessage(discord.Message):
     @classmethod
     async def convert(cls, ctx: BlimpContext, argument: str):
         """
-        Convert an alias to a message ID or fall back to the message converter.
+        Convert an alias to a message or fall back to the message converter.
         """
         if not ctx.guild or not len(argument) > 1 or not argument[0] == "'":
             return await commands.MessageConverter().convert(ctx, argument)
