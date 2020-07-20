@@ -1,6 +1,7 @@
+from enum import Enum
 import logging
-from typing import Union
 import sqlite3
+from typing import Union
 
 import discord
 from discord.ext import commands
@@ -10,6 +11,8 @@ class BlimpContext(commands.Context):
     """
     A context that does other useful things.
     """
+
+    ReplyColor = Enum("ReplyColor", ["GOOD", "I_GUESS", "BAD"])
 
     @property
     def log(self) -> logging.Logger:
@@ -28,6 +31,25 @@ class BlimpContext(commands.Context):
     def objects(self):
         """Return the bot's Objects cog."""
         return self.bot.get_cog("Objects")
+
+    async def reply(
+        self, msg: str, color: ReplyColor = ReplyColor.GOOD, embed: discord.Embed = None
+    ):
+        """Helper for sending embedded replies"""
+        if not embed:
+            actual_color = None
+            if color == self.ReplyColor.GOOD:
+                actual_color = 0x7DB358
+            elif color == self.ReplyColor.I_GUESS:
+                actual_color = 0xF9AE36
+            elif color == self.ReplyColor.BAD:
+                actual_color = 0xD52D48
+
+            await self.send(
+                "", embed=discord.Embed(color=actual_color, description=msg)
+            )
+        else:
+            await self.send("", embed=embed)
 
     def privileged_modify(
         self, subject: Union[discord.TextChannel, discord.Member, discord.Guild]

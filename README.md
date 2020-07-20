@@ -10,6 +10,8 @@ $ nix-shell
 [nix-shell:/blimp]$ python blimp
 ```
 
+---
+
 Copyright 2020 Cassidy Dingenskirchen and Contributors
 
 This program is free software: you can redistribute it and/or modify

@@ -70,7 +70,7 @@ class RoleKiosk(BlimpCog):
             },
         )
 
-        await ctx.send(f"{Blimp.OKAY} *Overwrote role kiosk {msg.id}.*")
+        await ctx.reply(f"*Overwrote role kiosk {msg.id}.*")
 
     @commands.command(parent=kiosk)
     async def delete(
@@ -95,7 +95,7 @@ class RoleKiosk(BlimpCog):
                 emoji.emoji, ctx.guild.get_member(ctx.bot.user.id)
             )
 
-        await ctx.send(f"{Blimp.OKAY} *Deleted role kiosk {msg.id}.*")
+        await ctx.reply(f"*Deleted role kiosk {msg.id}.*")
 
     def roles_from_payload(
         self, payload: discord.RawReactionActionEvent

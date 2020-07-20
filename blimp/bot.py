@@ -17,10 +17,6 @@ class Blimp(commands.Bot):
     in dynamic_prefix()).
     """
 
-    OKAY = "\N{LARGE GREEN SQUARE}"
-    I_GUESS = "\N{LARGE ORANGE SQUARE}"
-    BAD = "\N{LARGE RED SQUARE}"
-
     def __init__(self, suffix, database_path, **kwargs):
         self.suffix = suffix
 

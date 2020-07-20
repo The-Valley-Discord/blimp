@@ -40,7 +40,8 @@ class Objects(BlimpCog):
             if not channel:
                 return "[Failed to link]"
 
-            return (await channel.fetch_message(data["m"][1])).jump_url
+            url = (await channel.fetch_message(data["m"][1])).jump_url
+            return f"[Message in #{channel.name}]({url})"
 
         raise ValueError("Bad object")
 
@@ -116,7 +117,7 @@ class Objects(BlimpCog):
             "SELECT * FROM objects WHERE oid=:oid", {"oid": oid},
         )
         link = await self.object_link(new_cursor.fetchone())
-        await ctx.send(f"{Blimp.OKAY} *{link} is now known as {alias}.*")
+        await ctx.reply(f"*{link} is now known as {alias}.*")
 
     @commands.command(parent=alias)
     async def delete(self, ctx: BlimpContext, alias: str):
@@ -147,7 +148,7 @@ class Objects(BlimpCog):
             {"gid": ctx.guild.id, "alias": alias},
         )
 
-        await ctx.send(f"{Blimp.OKAY} *Deleted alias `{alias}` (was {link}).*")
+        await ctx.reply(f"*Deleted alias `{alias}` (was {link}).*")
 
     @commands.command(parent=alias)
     async def list(self, ctx: BlimpContext):
@@ -161,7 +162,8 @@ class Objects(BlimpCog):
             (alias["alias"], self.alias_to_object(ctx.guild.id, alias["alias"]))
             for alias in cursor.fetchall()
         ]
-        result = "\n".join([f"{d[0]}: <{await self.object_link(d[1])}>" for d in data])
+        result = "\n".join([f"{d[0]}: {await self.object_link(d[1])}" for d in data])
         if not result:
-            result = f"{Blimp.I_GUESS} *No aliases configured.*"
-        await ctx.send(result)
+            await ctx.reply("*No aliases configured.*", color=ctx.ReplyColor.I_GUESS)
+        else:
+            await ctx.reply(result)

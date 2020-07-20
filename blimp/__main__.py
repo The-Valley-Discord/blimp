@@ -41,7 +41,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_command_error(ctx: commands.Context, error):
+async def on_command_error(ctx, error):
     """
     Handle errors, delegating all "internal errors" (exceptions foreign to
     discordpy) to stderr and discordpy (i.e. high-level) errors to the user.
@@ -50,9 +50,9 @@ async def on_command_error(ctx: commands.Context, error):
         ctx.log.error(
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
-        await ctx.send(f"{Blimp.BAD} *Internal Error.*")
+        await ctx.reply("*Internal Error.*", color=ctx.ReplyColor.BAD)
     else:
-        await ctx.send(f"{Blimp.BAD} *Error: {error}*")
+        await ctx.reply(f"*Error: {error}*", color=ctx.ReplyColor.BAD)
 
 
 bot.run(config["discord"]["token"])
