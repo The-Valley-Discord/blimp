@@ -1,0 +1,9 @@
+[MASTER]
+init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()) + "/blimp")"
+
+[MESSAGES CONTROL]
+# disable checks for:
+# missing-module-docstring: effectively all modules here just contain one class
+# bad-continuation: black wants it the other way
+# logging-fstring-interpolation: better readability, main concern is irrelevant to this
+disable=missing-module-docstring,bad-continuation,logging-fstring-interpolation

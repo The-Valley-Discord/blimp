@@ -1,0 +1,7 @@
+[discord]
+suffix = !
+token = not telling you
+
+[log]
+level = INFO
+suppress = discord.gateway,discord.client
