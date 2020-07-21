@@ -68,7 +68,11 @@ class Board(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*Board configuration didn't exist.*", color=ctx.Color.I_GUESS
+                """*although unthought yet,*
+                *more frivolous than a Board*
+                *may be its absence.*""",
+                subtitle="No Board is configured in that channel.",
+                color=ctx.Color.I_GUESS,
             )
             return
 

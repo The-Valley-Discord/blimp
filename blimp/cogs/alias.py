@@ -59,7 +59,15 @@ class Aliasing(Blimp.Cog):
                 {"gid": ctx.guild.id, "alias": alias, "oid": oid},
             )
         except sqlite3.DatabaseError:
-            raise UserInputError("That alias already exists.")
+            ctx.database.excute("ABORT;")
+            await ctx.reply(
+                """*that word seems common*
+                *for it's an alias.*
+                *no doubles allowed.*""",
+                subtitle=f"{alias} is already registered as an alias.",
+                color=ctx.Color.I_GUESS,
+            )
+            return
 
         ctx.database.execute("COMMIT;")
 
@@ -77,7 +85,16 @@ class Aliasing(Blimp.Cog):
 
         self.validate_alias(alias)
 
-        old = ctx.objects.by_alias(ctx.guild.id, alias)[1]
+        old = ctx.objects.by_alias(ctx.guild.id, alias)
+        if not old:
+            await ctx.reply(
+                """*commonly you ask*
+                *to delete extant objects*
+                *though not this time.*""",
+                subject="Unknown alias.",
+                color=ctx.Color.I_GUESS,
+            )
+            return
 
         ctx.database.execute(
             "DELETE FROM aliases WHERE gid=:gid AND alias=:alias",
@@ -85,7 +102,7 @@ class Aliasing(Blimp.Cog):
         )
 
         await ctx.reply(
-            f"*Deleted alias `{alias}` (was {await ctx.bot.represent_object(old)}).*"
+            f"*Deleted alias `{alias}` (was {await ctx.bot.represent_object(old[1])}).*"
         )
 
     @commands.command(parent=alias)
@@ -104,9 +121,16 @@ class Aliasing(Blimp.Cog):
             [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
         )
         if not result:
-            await ctx.reply("*No aliases configured.*", color=ctx.Color.I_GUESS)
-        else:
-            await ctx.reply(result)
+            await ctx.reply(
+                """*honest yet verbose,*
+                *no aliases 'round here.*
+                *maybe you'll change that?*""",
+                subtitle="No aliases configured for this server.",
+                color=ctx.Color.I_GUESS,
+            )
+            return
+
+        await ctx.reply(result)
 
 
 class MaybeAliasedMessage(discord.Message):

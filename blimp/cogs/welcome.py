@@ -56,7 +56,11 @@ class Welcome(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*Welcome configuration didn't exist.*", color=ctx.Color.I_GUESS
+                """*I, yet again tasked*
+                *to erase what doesn't exist,*
+                *quietly ignore.*""",
+                subtitle="Welcome is not enabled for this server.",
+                color=ctx.Color.I_GUESS,
             )
             return
 
@@ -125,7 +129,11 @@ class Welcome(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*Welcome configuration didn't exist.*", color=ctx.Color.I_GUESS
+                """*heartbroken, ordered*
+                *to remove a farewell, joy*
+                *as I can refuse.*""",
+                subtitle="Goodbye is not enabled for this server.",
+                color=ctx.Color.I_GUESS,
             )
             return
 

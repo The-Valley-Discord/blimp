@@ -52,11 +52,23 @@ class Blimp(commands.Bot):
             return self.bot.objects
 
         async def reply(
-            self, msg: str, color: Color = Color.GOOD, embed: discord.Embed = None,
+            self,
+            msg: str,
+            subtitle: str = None,
+            color: Color = Color.GOOD,
+            embed: discord.Embed = None,
         ):
             """Helper for sending embedded replies"""
             if not embed:
-                await self.send("", embed=discord.Embed(color=color, description=msg))
+                if not subtitle:
+                    subtitle = discord.Embed.Empty
+
+                await self.send(
+                    "",
+                    embed=discord.Embed(color=color, description=msg).set_footer(
+                        text=subtitle
+                    ),
+                )
             else:
                 await self.send("", embed=embed)
 

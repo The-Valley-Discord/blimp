@@ -58,18 +58,28 @@ class RoleKiosk(Blimp.Cog):
         for _, role in result:
             if not ctx.privileged_modify(role):
                 user_failed_roles.append(role)
-            if not ctx.me.roles[-1] > role:
+            if not ctx.me.top_role > role:
                 bot_failed_roles.append(role)
 
         if user_failed_roles:
-            raise UserInputError(
-                f"You can't manage these roles: {' '.join([r.mention for r in user_failed_roles])}"
+            await ctx.reply(
+                """*how promethean,*
+                *gifting roles you don't control.*
+                *yet I must decline.*""",
+                subtitle=f"You can't manage these roles: {' '.join([r.name for r in user_failed_roles])}",
+                color=ctx.Color.BAD,
             )
+            return
 
         if bot_failed_roles:
-            raise UserInputError(
-                f"The bot can't assign these roles: {' '.join([r.mention for r in bot_failed_roles])}"
+            await ctx.reply(
+                """*despite best efforts,*
+                *this kiosk is doomed to fail,*
+                *its roles beyond me.*""",
+                subtitle=f"The bot can't manage these roles: {' '.join([r.name for r in bot_failed_roles])}",
+                color=ctx.Color.BAD,
             )
+            return
 
         result = [(emoji, role.id) for (emoji, role) in result]
 
@@ -109,7 +119,13 @@ class RoleKiosk(Blimp.Cog):
             {"oid": ctx.objects.by_data(m=[msg.channel.id, msg.id])},
         )
         if cursor.rowcount == 0:
-            raise UserInputError("That message isn't a role kiosk.")
+            await ctx.reply(
+                """*trying to comply*
+                *I searched all the kiosks known*
+                *that one's still foreign*""",
+                subtitle="That message isn't a role kiosk.",
+                color=ctx.Color.I_GUESS,
+            )
 
         for emoji in [item for item in msg.reactions if item.me]:
             await msg.remove_reaction(emoji.emoji, ctx.guild.me)

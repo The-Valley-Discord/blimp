@@ -47,9 +47,21 @@ async def on_command_error(ctx, error):
         ctx.log.error(
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
-        await ctx.reply("*Internal Error.*", color=ctx.Color.BAD)
+        await ctx.reply(
+            """*soon questions arise:*
+            *me unwilling, what did you*
+            *want in the first place?*""",
+            subtitle="Internal Error.",
+            color=ctx.Color.BAD,
+        )
     else:
-        await ctx.reply(f"*Error: {error}*", color=ctx.Color.BAD)
+        await ctx.reply(
+            """*here's news, good and bad:*
+            *the bad, something clearly broke.*
+            *the good? not my fault.*""",
+            subtitle=f"Error: {error}",
+            color=ctx.Color.BAD,
+        )
 
 
 bot.run(config["discord"]["token"])
