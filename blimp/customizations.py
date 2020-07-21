@@ -1,0 +1,159 @@
+import enum
+import logging
+import random
+import sqlite3
+from typing import Union
+
+import discord
+from discord import Activity, ActivityType
+from discord.ext import commands
+
+from objects import BlimpObjects
+
+
+class Blimp(commands.Bot):
+    """
+    Instead of using a prefix like... normal bots, Blimp checks if the first
+    word in a message has a suffix and uses that for its command name.
+    From the bot's point of view, all command names actually end with the
+    suffix (ensured by the overrides below) and the command prefix always is
+    the empty string when the message has the correct formatting (that's done
+    in dynamic_prefix()).
+    """
+
+    class Context(commands.Context):
+        """
+        A context that does other useful things.
+        """
+
+        class Color(enum.IntEnum):
+            "Colors used by Blimp."
+            GOOD = 0x7DB358
+            I_GUESS = 0xF9AE36
+            BAD = 0xD52D48
+            AUTOMATIC_BLUE = 0x1C669B
+
+        @property
+        def log(self) -> logging.Logger:
+            """Return a logger that's associated with the current cog and command."""
+            if not self.cog:
+                return self.bot.log.getChild(self.command.name)
+
+            return self.cog.log.getChild(self.command.name)
+
+        @property
+        def database(self) -> sqlite3.Connection:
+            """Return the bot's database connection."""
+            return self.bot.database
+
+        @property
+        def objects(self) -> BlimpObjects:
+            """Return the bot's Objects manager."""
+            return self.bot.objects
+
+        async def reply(
+            self, msg: str, color: Color = Color.GOOD, embed: discord.Embed = None,
+        ):
+            """Helper for sending embedded replies"""
+            if not embed:
+                await self.send("", embed=discord.Embed(color=color, description=msg))
+            else:
+                await self.send("", embed=embed)
+
+        def privileged_modify(
+            self, subject: Union[discord.TextChannel, discord.Member, discord.Guild]
+        ) -> bool:
+            """
+            Check if the context's user can do privileged actions on the subject.
+            """
+            kind = subject.__class__
+            if kind == discord.TextChannel:
+                return self.author.permissions_for(subject).manage_messages
+            if kind == discord.Member:
+                return self.author.guild_permissions.ban_users
+            if kind == discord.Guild:
+                return self.author.guild_permissions.manage_guild
+
+            raise ValueError("unsupported subject {kind}")
+
+    class Cog(commands.Cog):
+        """
+        A cog with a logger attached to it.
+        """
+
+        def __init__(self, bot):
+            self.bot = bot
+            self.log = bot.log.getChild(self.__class__.__name__)
+
+    def __init__(self, suffix, database_path, **kwargs):
+        self.suffix = suffix
+
+        self.log = logging.getLogger("blimp")
+        self.log.setLevel(logging.INFO)
+
+        self.database = sqlite3.connect(database_path, isolation_level=None)
+        self.database.row_factory = sqlite3.Row
+
+        self.objects = BlimpObjects(self.database)
+
+        super().__init__(self.dynamic_prefix, **kwargs)
+
+    def add_command(self, command: commands.Command):
+        command.name = command.name + self.suffix
+        super().add_command(command)
+
+    def remove_command(self, name):
+        super().remove_command(name + self.suffix)
+
+    async def get_context(self, message, *, cls=Context):
+        return await super().get_context(message, cls=cls)
+
+    @staticmethod
+    def random_status() -> Activity:
+        """Return a silly status to show to the world"""
+        return random.choice(
+            [
+                Activity(type=ActivityType.watching, name="from far above"),
+                Activity(
+                    type=ActivityType.playing,
+                    name="awfully bold of you to fly the Good Year blimp "
+                    "on a year that has been extremely bad thus far",
+                ),
+            ]
+        )
+
+    @staticmethod
+    def dynamic_prefix(bot, msg: discord.Message) -> str:
+        """
+        If the first word of a message has the bot's suffix, give an always-
+        matching empty prefix, otherwise, a space (never matches due to
+        Discord's sanitizers)
+        """
+        if not msg.content:
+            return " "
+        if msg.content.split()[0][-1] == bot.suffix:
+            return ""
+
+        return " "
+
+    async def represent_object(self, data: dict) -> str:
+        """
+        Create something the user can click on that gets them to an object.
+        """
+
+        if "m" in data:
+            try:
+                channel = self.get_channel(data["m"][0])
+                url = (await channel.fetch_message(data["m"][1])).jump_url
+                return f"[Message in #{channel.name}]({url})"
+            except:  # pylint: disable=bare-except
+                return "[Failed to link message]"
+
+        if "tc" in data:
+            try:
+                channel = self.get_channel(data["tc"])
+                return channel.mention
+            except:  # pylint: disable=bare-except
+                return "[Failed to link channel]"
+
+        raise ValueError(f"can't link to {data.keys()}")

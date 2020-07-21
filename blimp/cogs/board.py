@@ -1,21 +1,19 @@
-from typing import List, Union
 import json
 
 import discord
 from discord.ext import commands
 
-from bot import BlimpCog
-from context import BlimpContext
-from converters import MaybeAliasedTextChannel
+from customizations import Blimp
+from .alias import MaybeAliasedTextChannel
 
 
-class Board(BlimpCog):
+class Board(Blimp.Cog):
     """
     Putting up monuments to all your sins.
     """
 
     @commands.group()
-    async def board(self, ctx: BlimpContext):
+    async def board(self, ctx: Blimp.Context):
         """
         The Board is a channel that gets any messages that get enough
         of certain reactions reposted into it. Also known as "starboard" on
@@ -25,7 +23,7 @@ class Board(BlimpCog):
     @commands.command(parent=board)
     async def update(
         self,
-        ctx: BlimpContext,
+        ctx: Blimp.Context,
         channel: MaybeAliasedTextChannel,
         emoji: str,
         min_reacts: str,
@@ -37,6 +35,7 @@ class Board(BlimpCog):
         <min_reacts> is how many emoji you want the messages to have before
         they get reposted.
         """
+
         if not ctx.privileged_modify(channel.guild):
             return
 
@@ -57,10 +56,9 @@ class Board(BlimpCog):
         await ctx.reply(f"*Overwrote board configuration for {channel.mention}.*")
 
     @commands.command(parent=board)
-    async def disable(self, ctx: BlimpContext, channel: MaybeAliasedTextChannel):
-        """
-        Disable a Board, deleting prior configuration.
-        """
+    async def disable(self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel):
+        "Disable a Board, deleting prior configuration."
+
         if not ctx.privileged_modify(channel.guild):
             return
 
@@ -79,12 +77,12 @@ class Board(BlimpCog):
     def format_message(
         self, msg: discord.Message, reaction: discord.Reaction
     ) -> discord.Embed:
-        """Turn a message into an embed."""
+        "Turn a message into an embed for the Board."
 
         embed = discord.Embed(
             description=msg.content,
             timestamp=msg.created_at,
-            color=BlimpContext.color(BlimpContext.Color.AUTOMATIC_BLUE),
+            color=Blimp.Context.Color.AUTOMATIC_BLUE,
         )
         embed.set_author(name=msg.author, icon_url=msg.author.avatar_url)
 
@@ -106,11 +104,11 @@ class Board(BlimpCog):
         )
         return embed
 
-    @BlimpCog.listener()
+    @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        """Listen for reactions and repost/update if appropriate."""
+        "Listen for reactions and repost/update if appropriate."
 
-        objects = self.bot.get_cog("Objects")
+        objects = self.bot.objects
 
         boards = self.bot.database.execute(
             "SELECT * FROM board_configuration WHERE guild_oid=:guild_oid",
@@ -125,20 +123,20 @@ class Board(BlimpCog):
         for board in boards:
             emoji, min_reacts = json.loads(board["data"])
             min_reacts = int(min_reacts)
+            possible_reactions = [
+                react
+                for react in orig_message.reactions
+                if (
+                    emoji == "any"
+                    or emoji == react.emoji
+                    or emoji == getattr(react.emoji, "id", None)
+                )
+                and react.count >= min_reacts
+            ]
             reaction = sorted(
-                [
-                    r
-                    for r in orig_message.reactions
-                    if (
-                        emoji == "any"
-                        or emoji == r.emoji
-                        or emoji == getattr(r.emoji, "id", None)
-                    )
-                    and r.count >= min_reacts
-                ],
-                key=lambda react: react.count,
-                reverse=True,
+                possible_reactions, key=lambda react: react.count, reverse=True,
             )
+            print(reaction)
             if not reaction:
                 continue
 
@@ -151,7 +149,7 @@ class Board(BlimpCog):
                 },
             ).fetchone()
             if to_edit:
-                to_edit = objects.data(objects.by_oid(to_edit["oid"]))["m"]
+                to_edit = objects.by_oid(to_edit["oid"])["m"]
                 board_msg = await self.bot.get_channel(to_edit[0]).fetch_message(
                     to_edit[1]
                 )
@@ -159,9 +157,7 @@ class Board(BlimpCog):
                     embed=self.format_message(orig_message, reaction[0])
                 )
             else:
-                board_channel = self.bot.get_channel(
-                    objects.data(objects.by_oid(board["oid"]))["tc"]
-                )
+                board_channel = self.bot.get_channel(objects.by_oid(board["oid"])["tc"])
                 board_msg = await board_channel.send(
                     "", embed=self.format_message(orig_message, reaction[0])
                 )
@@ -174,4 +170,3 @@ class Board(BlimpCog):
                         ),
                     },
                 )
-

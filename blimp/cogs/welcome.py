@@ -4,25 +4,24 @@ from string import Template
 import discord
 from discord.ext import commands
 
-from bot import BlimpCog
-from context import BlimpContext
-from converters import MaybeAliasedTextChannel
+from customizations import Blimp
+from .alias import MaybeAliasedTextChannel
 
 
-class Welcome(BlimpCog):
+class Welcome(Blimp.Cog):
     """
     Greeting and goodbye-ing people.
     """
 
     @commands.group()
-    async def welcome(self, ctx: BlimpContext):
+    async def welcome(self, ctx: Blimp.Context):
         """
         Configure user-facing join notifications.
         """
 
     @commands.command(parent=welcome, name="update")
     async def w_update(
-        self, ctx: BlimpContext, channel: MaybeAliasedTextChannel, *, greeting: str
+        self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
         """
         Update the guild's welcome messages, overwriting prior configuration.
@@ -45,7 +44,7 @@ class Welcome(BlimpCog):
         )
 
     @commands.command(parent=welcome, name="disable")
-    async def w_disable(self, ctx: BlimpContext):
+    async def w_disable(self, ctx: Blimp.Context):
         """
         Disable the guild's welcome messages, deleting prior configuration.
         """
@@ -63,12 +62,12 @@ class Welcome(BlimpCog):
 
         await ctx.reply("*Deleted welcome configuration.*")
 
-    @BlimpCog.listener()
+    @Blimp.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         """
         Look up if we have a configuration for this guild and greet accordingly.
         """
-        objects = self.bot.get_cog("Objects")
+        objects = self.bot.objects
 
         cursor = self.bot.database.execute(
             "SELECT * FROM welcome_configuration WHERE oid=:oid",
@@ -79,19 +78,19 @@ class Welcome(BlimpCog):
             return
 
         data = json.loads(row["join_data"])
-        channel = self.bot.get_channel(objects.data(objects.by_oid(data[0]))["tc"])
+        channel = self.bot.get_channel(objects.by_oid(data[0])["tc"])
 
         await channel.send(Template(data[1]).safe_substitute({"user": member.mention}))
 
     @commands.group()
-    async def goodbye(self, ctx: BlimpContext):
+    async def goodbye(self, ctx: Blimp.Context):
         """
         Configure user-facing leave notifications.
         """
 
     @commands.command(parent=goodbye, name="update")
     async def g_update(
-        self, ctx: BlimpContext, channel: MaybeAliasedTextChannel, *, greeting: str
+        self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
         """
         Update the guild's goodbye messages, overwriting prior configuration.
@@ -114,7 +113,7 @@ class Welcome(BlimpCog):
         )
 
     @commands.command(parent=goodbye, name="disable")
-    async def g_disable(self, ctx: BlimpContext):
+    async def g_disable(self, ctx: Blimp.Context):
         """
         Disable the guild's goodbye messages, deleting prior configuration.
         """
@@ -132,13 +131,13 @@ class Welcome(BlimpCog):
 
         await ctx.reply("*Deleted goodbye configuration.*")
 
-    @BlimpCog.listener()
+    @Blimp.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         """
         Look up if we have a configuration for this guild and say goodbye
         accordingly.
         """
-        objects = self.bot.get_cog("Objects")
+        objects = self.bot.objects
 
         cursor = self.bot.database.execute(
             "SELECT * FROM welcome_configuration WHERE oid=:oid",
@@ -149,6 +148,6 @@ class Welcome(BlimpCog):
             return
 
         data = json.loads(row["leave_data"])
-        channel = self.bot.get_channel(objects.data(objects.by_oid(data[0]))["tc"])
+        channel = self.bot.get_channel(objects.by_oid(data[0])["tc"])
 
         await channel.send(Template(data[1]).safe_substitute({"user": member.mention}))

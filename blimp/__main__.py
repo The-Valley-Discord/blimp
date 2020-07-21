@@ -7,7 +7,7 @@ import logging
 
 from discord.ext import commands
 
-from bot import Blimp
+from customizations import Blimp
 import cogs
 
 config = ConfigParser()
@@ -27,7 +27,7 @@ bot = Blimp(
     case_insensitive=True,
     activity=Blimp.random_status(),
 )
-for cog in [cogs.RoleKiosk, cogs.Objects, cogs.Welcome, cogs.Board]:
+for cog in [cogs.RoleKiosk, cogs.Aliasing, cogs.Welcome, cogs.Board]:
     bot.add_cog(cog(bot))
 
 

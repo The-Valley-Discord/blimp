@@ -5,18 +5,17 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import UserInputError
 
-from bot import BlimpCog
-from context import BlimpContext
-from converters import MaybeAliasedMessage
+from customizations import Blimp
+from .alias import MaybeAliasedMessage
 
 
-class RoleKiosk(BlimpCog):
+class RoleKiosk(Blimp.Cog):
     """
     Handing out fancy badges.
     """
 
     @commands.group()
-    async def kiosk(self, ctx: BlimpContext):
+    async def kiosk(self, ctx: Blimp.Context):
         """
         Manage your guild's role kiosks.
         """
@@ -24,7 +23,7 @@ class RoleKiosk(BlimpCog):
     @commands.command(parent=kiosk)
     async def update(
         self,
-        ctx: BlimpContext,
+        ctx: Blimp.Context,
         msg: MaybeAliasedMessage,
         args: commands.Greedy[Union[discord.Role, str]],
     ):
@@ -76,7 +75,7 @@ class RoleKiosk(BlimpCog):
 
     @commands.command(parent=kiosk)
     async def delete(
-        self, ctx: BlimpContext, msg: MaybeAliasedMessage,
+        self, ctx: Blimp.Context, msg: MaybeAliasedMessage,
     ):
         """
         Delete a role kiosk (but not the message).
@@ -109,7 +108,7 @@ class RoleKiosk(BlimpCog):
         cursor = self.bot.database.execute(
             "SELECT data FROM rolekiosk_entries WHERE oid=:oid",
             {
-                "oid": self.bot.get_cog("Objects").by_data(
+                "oid": self.bot.objects.by_data(
                     m=[payload.channel_id, payload.message_id]
                 )
             },
@@ -125,7 +124,7 @@ class RoleKiosk(BlimpCog):
             if emoji in (payload.emoji.name, payload.emoji.id)
         ]
 
-    @BlimpCog.listener()
+    @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         """
         On reaction creation, check if we should add roles and do so.
@@ -141,7 +140,7 @@ class RoleKiosk(BlimpCog):
                 *roles, reason=f"Role Kiosk {payload.message_id}",
             )
 
-    @BlimpCog.listener()
+    @Blimp.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         """
         On reaction removal, check if we should remove roles and do so.

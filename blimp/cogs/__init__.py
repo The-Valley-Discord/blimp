@@ -1,8 +1,7 @@
 from discord.ext import commands
 
-from bot import Blimp
 
-from .objects import Objects
+from .alias import Aliasing
+from .board import Board
 from .rolekiosk import RoleKiosk
 from .welcome import Welcome
-from .board import Board
