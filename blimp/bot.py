@@ -42,12 +42,14 @@ class Blimp(commands.Bot):
 
     @staticmethod
     def random_status() -> Activity:
+        """Return a silly status to show to the world"""
         return random.choice(
             [
                 Activity(type=ActivityType.watching, name="from far above"),
                 Activity(
                     type=ActivityType.playing,
-                    name="awfully bold of you to fly the Good Year blimp on a year that has been extremely bad thus far",
+                    name="awfully bold of you to fly the Good Year blimp "
+                    "on a year that has been extremely bad thus far",
                 ),
             ]
         )

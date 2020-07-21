@@ -14,6 +14,17 @@ class BlimpContext(commands.Context):
 
     ReplyColor = Enum("ReplyColor", ["GOOD", "I_GUESS", "BAD"])
 
+    @classmethod
+    def color(cls, color: ReplyColor) -> int:
+        """Return the color appropriate for the ReplyColor supplied"""
+        if color == cls.ReplyColor.GOOD:
+            return 0x7DB358
+        if color == cls.ReplyColor.I_GUESS:
+            return 0xF9AE36
+        if color == cls.ReplyColor.BAD:
+            return 0xD52D48
+        raise ValueError("Bad ReplyColor")
+
     @property
     def log(self) -> logging.Logger:
         """Return a logger that's associated with the current cog and command."""
@@ -37,16 +48,8 @@ class BlimpContext(commands.Context):
     ):
         """Helper for sending embedded replies"""
         if not embed:
-            actual_color = None
-            if color == self.ReplyColor.GOOD:
-                actual_color = 0x7DB358
-            elif color == self.ReplyColor.I_GUESS:
-                actual_color = 0xF9AE36
-            elif color == self.ReplyColor.BAD:
-                actual_color = 0xD52D48
-
             await self.send(
-                "", embed=discord.Embed(color=actual_color, description=msg)
+                "", embed=discord.Embed(color=self.color(color), description=msg)
             )
         else:
             await self.send("", embed=embed)

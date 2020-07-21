@@ -5,7 +5,6 @@ Actually the interesting file, init code lives here
 from configparser import ConfigParser
 import logging
 
-import discord
 from discord.ext import commands
 
 from bot import Blimp
@@ -28,7 +27,7 @@ bot = Blimp(
     case_insensitive=True,
     activity=Blimp.random_status(),
 )
-for cog in [cogs.RoleKiosk, cogs.Objects]:
+for cog in [cogs.RoleKiosk, cogs.Objects, cogs.Welcome]:
     bot.add_cog(cog(bot))
 
 

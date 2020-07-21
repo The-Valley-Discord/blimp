@@ -65,12 +65,14 @@ class RoleKiosk(BlimpCog):
         ctx.database.execute(
             "INSERT OR REPLACE INTO rolekiosk_entries(oid, data) VALUES(:oid,json(:data))",
             {
-                "oid": ctx.objects.make_object({"m": [msg.channel.id, msg.id]}),
+                "oid": ctx.objects.make_object(m=[msg.channel.id, msg.id]),
                 "data": json.dumps(result),
             },
         )
 
-        await ctx.reply(f"*Overwrote role kiosk {msg.id}.*")
+        await ctx.reply(
+            f"*Overwrote [role kiosk in #{msg.channel.name}]({msg.jump_url}).*"
+        )
 
     @commands.command(parent=kiosk)
     async def delete(
@@ -85,17 +87,17 @@ class RoleKiosk(BlimpCog):
 
         cursor = ctx.database.execute(
             "DELETE FROM rolekiosk_entries WHERE oid=:oid",
-            {"oid": ctx.objects.find_object({"m": [msg.channel.id, msg.id]})},
+            {"oid": ctx.objects.by_data(m=[msg.channel.id, msg.id])},
         )
         if cursor.rowcount == 0:
             raise UserInputError("That message isn't a role kiosk.")
 
         for emoji in [item for item in msg.reactions if item.me]:
-            await msg.remove_reaction(
-                emoji.emoji, ctx.guild.get_member(ctx.bot.user.id)
-            )
+            await msg.remove_reaction(emoji.emoji, ctx.guild.me)
 
-        await ctx.reply(f"*Deleted role kiosk {msg.id}.*")
+        await ctx.reply(
+            f"*Deleted [role kiosk in #{msg.channel.name}]({msg.jump_url}).*"
+        )
 
     def roles_from_payload(
         self, payload: discord.RawReactionActionEvent
@@ -107,8 +109,8 @@ class RoleKiosk(BlimpCog):
         cursor = self.bot.database.execute(
             "SELECT data FROM rolekiosk_entries WHERE oid=:oid",
             {
-                "oid": self.bot.get_cog("Objects").find_object(
-                    {"m": [payload.channel_id, payload.message_id]}
+                "oid": self.bot.get_cog("Objects").by_data(
+                    m=[payload.channel_id, payload.message_id]
                 )
             },
         )

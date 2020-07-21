@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import UserInputError
 
-from bot import Blimp, BlimpCog
+from bot import BlimpCog
 from context import BlimpContext
 
 
@@ -15,7 +15,7 @@ class Objects(BlimpCog):
     Internal "object" manager for Blimp. Powers aliasing.
     """
 
-    def alias_to_object(self, guild_id: int, alias: str) -> sqlite3.Row:
+    def by_alias(self, guild_id: int, alias: str) -> sqlite3.Row:
         """Get the object behind an alias for the specified guild."""
         alias_cursor = self.bot.database.execute(
             "SELECT * FROM aliases WHERE gid=:gid AND alias=:alias",
@@ -25,48 +25,70 @@ class Objects(BlimpCog):
         if not alias:
             return None
 
-        cursor = self.bot.database.execute(
-            "SELECT * FROM objects WHERE oid=:oid", {"oid": alias["oid"]},
-        )
-        return cursor.fetchone()
+        return self.by_oid(alias["oid"])
 
-    async def object_link(self, row: sqlite3.Row) -> str:
-        """
-        Create something the user can click on that gets them to the object.
-        """
-        data = json.loads(row["data"])
-        if data["m"]:
-            channel = self.bot.get_channel(data["m"][0])
-            if not channel:
-                return "[Failed to link]"
-
-            url = (await channel.fetch_message(data["m"][1])).jump_url
-            return f"[Message in #{channel.name}]({url})"
-
-        raise ValueError("Bad object")
-
-    def make_object(self, data: dict) -> int:
-        """
-        Create an object (do nothing if exists) and return its oid.
-        """
-        cursor = self.bot.database.execute(
-            "INSERT OR REPLACE INTO objects(data) VALUES(json(:data));",
-            {"data": json.dumps(data)},
-        )
-        return cursor.lastrowid
-
-    def find_object(self, data: dict) -> int:
+    def by_data(self, **kwargs) -> int:
         """
         Find an object and return its oid or None.
         """
         cursor = self.bot.database.execute(
-            "SELECT * FROM objects WHERE data=json(:data)", {"data": json.dumps(data)}
+            "SELECT * FROM objects WHERE data=json(:data)", {"data": json.dumps(kwargs)}
         )
         obj = cursor.fetchone()
 
         if not obj:
             return None
         return obj["oid"]
+
+    def by_oid(self, oid: int) -> sqlite3.Row:
+        """
+        Find an object by oid or None.
+        """
+        cursor = self.bot.database.execute(
+            "SELECT * FROM objects WHERE oid=:oid", {"oid": oid}
+        )
+        return cursor.fetchone()
+
+    def data(self, row: sqlite3.Row) -> dict:
+        """Extract the data from an object."""
+        return json.loads(row["data"])
+
+    async def representation(self, row: sqlite3.Row) -> str:
+        """
+        Create something the user can click on that gets them to the object.
+        """
+        data = json.loads(row["data"])
+
+        if "m" in data:
+            try:
+                channel = self.bot.get_channel(data["m"][0])
+                url = (await channel.fetch_message(data["m"][1])).jump_url
+                return f"[Message in #{channel.name}]({url})"
+            except:  # pylint: disable=bare-except
+                return "[Failed to link message]"
+
+        if "tc" in data:
+            try:
+                channel = self.bot.get_channel(data["tc"])
+                return channel.mention
+            except:  # pylint: disable=bare-except
+                return "[Failed to link channel]"
+
+        raise ValueError(f"can't link to {data.keys()}")
+
+    def make_object(self, **kwargs) -> int:
+        """
+        INSERT OR IGNORE an object and return its oid.
+        """
+        old = self.by_data(**kwargs)
+        if old:
+            return old
+
+        cursor = self.bot.database.execute(
+            "INSERT INTO objects(data) VALUES(json(:data))",
+            {"data": json.dumps(kwargs)},
+        )
+        return cursor.lastrowid
 
     @staticmethod
     def validate_alias(string) -> None:
@@ -85,7 +107,12 @@ class Objects(BlimpCog):
         """
 
     @commands.command(parent=alias)
-    async def make(self, ctx: BlimpContext, target: Union[discord.Message], alias: str):
+    async def make(
+        self,
+        ctx: BlimpContext,
+        target: Union[discord.Message, discord.TextChannel],
+        alias: str,
+    ):
         """
         Create an alias for a Discord object (messages, channels).
         Aliases must start with a single ', have no whitespace, and be unique.
@@ -99,7 +126,9 @@ class Objects(BlimpCog):
 
         oid = None
         if target.__class__ == discord.Message:
-            oid = self.make_object({"m": [target.channel.id, target.id]})
+            oid = self.make_object(m=[target.channel.id, target.id])
+        elif target.__class__ == discord.TextChannel:
+            oid = self.make_object(tc=target.id)
         else:
             raise ValueError("Bad object")
 
@@ -113,10 +142,7 @@ class Objects(BlimpCog):
 
         ctx.database.execute("COMMIT;")
 
-        new_cursor = ctx.database.execute(
-            "SELECT * FROM objects WHERE oid=:oid", {"oid": oid},
-        )
-        link = await self.object_link(new_cursor.fetchone())
+        link = await self.representation(self.by_oid(oid))
         await ctx.reply(f"*{link} is now known as {alias}.*")
 
     @commands.command(parent=alias)
@@ -128,27 +154,18 @@ class Objects(BlimpCog):
         if not ctx.privileged_modify(ctx.guild):
             return
 
-        if not len(alias) > 2 or not alias[0] == "'":
-            raise UserInputError(
-                "Aliases must start with ' and have at least one character after that."
-            )
+        self.validate_alias(alias)
 
-        cursor = ctx.database.execute(
-            "SELECT * FROM objects_aliases WHERE gid=:gid AND alias=:alias",
-            {"gid": ctx.guild.id, "alias": alias},
-        )
-        old = cursor.fetchone()
-        if not old:
-            raise UserInputError("That alias doesn't exist.")
-
-        link = await self.object_link(old)
+        old = self.by_alias(ctx.guild.id, alias)
 
         ctx.database.execute(
-            "DELETE FROM objects_aliases WHERE gid=:gid AND alias=:alias",
+            "DELETE FROM aliases WHERE gid=:gid AND alias=:alias",
             {"gid": ctx.guild.id, "alias": alias},
         )
 
-        await ctx.reply(f"*Deleted alias `{alias}` (was {link}).*")
+        await ctx.reply(
+            f"*Deleted alias `{alias}` (was {await self.representation(old)}).*"
+        )
 
     @commands.command(parent=alias)
     async def list(self, ctx: BlimpContext):
@@ -159,10 +176,10 @@ class Objects(BlimpCog):
             "SELECT * FROM aliases WHERE gid=:gid", {"gid": ctx.guild.id}
         )
         data = [
-            (alias["alias"], self.alias_to_object(ctx.guild.id, alias["alias"]))
+            (alias["alias"], self.by_alias(ctx.guild.id, alias["alias"]))
             for alias in cursor.fetchall()
         ]
-        result = "\n".join([f"{d[0]}: {await self.object_link(d[1])}" for d in data])
+        result = "\n".join([f"{d[0]}: {await self.representation(d[1])}" for d in data])
         if not result:
             await ctx.reply("*No aliases configured.*", color=ctx.ReplyColor.I_GUESS)
         else:

@@ -1,0 +1,4 @@
+{
+    "nixEnvSelector.nixShellConfig": "${workspaceRoot}/shell.nix",
+    "python.pythonPath": "/nix/store/7q4crsd8kvmma32ff2xw4w9ydj5k26cy-python3-3.8.3/bin/python"
+}
