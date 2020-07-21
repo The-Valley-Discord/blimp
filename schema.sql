@@ -23,3 +23,18 @@ CREATE TABLE IF NOT EXISTS welcome_configuration (
     leave_data STRING,
     FOREIGN KEY (oid) REFERENCES objects(oid)
 );
+
+CREATE TABLE IF NOT EXISTS board_configuration (
+    oid INTEGER PRIMARY KEY,
+    guild_oid INTEGER NOT NULL,
+    data STRING NOT NULL,
+    FOREIGN KEY (oid) REFERENCES objects(oid),
+    FOREIGN KEY (guild_oid) REFERENCES objects(oid)
+);
+
+CREATE TABLE IF NOT EXISTS board_entries (
+    oid INTEGER PRIMARY KEY,
+    original_oid INTEGER NOT NULL UNIQUE,
+    FOREIGN KEY (oid) REFERENCES objects(oid),
+    FOREIGN KEY (original_oid) REFERENCES objects(oid)
+);

@@ -27,7 +27,7 @@ bot = Blimp(
     case_insensitive=True,
     activity=Blimp.random_status(),
 )
-for cog in [cogs.RoleKiosk, cogs.Objects, cogs.Welcome]:
+for cog in [cogs.RoleKiosk, cogs.Objects, cogs.Welcome, cogs.Board]:
     bot.add_cog(cog(bot))
 
 
@@ -49,7 +49,7 @@ async def on_command_error(ctx, error):
         )
         await ctx.reply("*Internal Error.*", color=ctx.Color.BAD)
     else:
-        await ctx.reply(f"*Error: {error}*", color=ctx.ReplyColor.BAD)
+        await ctx.reply(f"*Error: {error}*", color=ctx.Color.BAD)
 
 
 bot.run(config["discord"]["token"])
