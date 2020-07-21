@@ -136,7 +136,6 @@ class Board(Blimp.Cog):
             reaction = sorted(
                 possible_reactions, key=lambda react: react.count, reverse=True,
             )
-            print(reaction)
             if not reaction:
                 continue
 
@@ -158,6 +157,12 @@ class Board(Blimp.Cog):
                 )
             else:
                 board_channel = self.bot.get_channel(objects.by_oid(board["oid"])["tc"])
+                if (
+                    orig_message.author == orig_channel.guild.me
+                    and orig_channel == board_channel
+                ):
+                    continue
+
                 board_msg = await board_channel.send(
                     "", embed=self.format_message(orig_message, reaction[0])
                 )

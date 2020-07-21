@@ -46,12 +46,32 @@ class RoleKiosk(Blimp.Cog):
             if len(emoji_id) != 0:
                 emoji = int("".join(emoji_id))
 
-            result.append((emoji, role.id))
+            result.append((emoji, role))
 
         if len(result) == 0:
             raise UserInputError("Expected arguments :emoji: role :emoji: role...")
         if len(result) > 20:
             raise UserInputError("Can't use more than 20 reactions per kiosk.")
+
+        user_failed_roles = []
+        bot_failed_roles = []
+        for _, role in result:
+            if not ctx.privileged_modify(role):
+                user_failed_roles.append(role)
+            if not ctx.me.roles[-1] > role:
+                bot_failed_roles.append(role)
+
+        if user_failed_roles:
+            raise UserInputError(
+                f"You can't manage these roles: {' '.join([r.mention for r in user_failed_roles])}"
+            )
+
+        if bot_failed_roles:
+            raise UserInputError(
+                f"The bot can't assign these roles: {' '.join([r.mention for r in bot_failed_roles])}"
+            )
+
+        result = [(emoji, role.id) for (emoji, role) in result]
 
         for emoji in [item for item in msg.reactions if item.me]:
             await msg.remove_reaction(

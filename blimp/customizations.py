@@ -61,7 +61,10 @@ class Blimp(commands.Bot):
                 await self.send("", embed=embed)
 
         def privileged_modify(
-            self, subject: Union[discord.TextChannel, discord.Member, discord.Guild]
+            self,
+            subject: Union[
+                discord.TextChannel, discord.Member, discord.Guild, discord.Role
+            ],
         ) -> bool:
             """
             Check if the context's user can do privileged actions on the subject.
@@ -73,8 +76,12 @@ class Blimp(commands.Bot):
                 return self.author.guild_permissions.ban_users
             if kind == discord.Guild:
                 return self.author.guild_permissions.manage_guild
+            if kind == discord.Role:
+                return self.author.guild_permissions.manage_roles and (
+                    self.author.top_role > subject or self.guild.owner == self.author
+                )
 
-            raise ValueError("unsupported subject {kind}")
+            raise ValueError(f"unsupported subject {kind}")
 
     class Cog(commands.Cog):
         """

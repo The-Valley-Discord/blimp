@@ -127,7 +127,9 @@ class MaybeAliasedMessage(discord.Message):
         if not data.get("m"):
             raise commands.BadArgument(f"Alias {argument} doesn't refer to a message.")
 
-        return await commands.TextChannelConverter().convert(ctx, str(data.get("m")))
+        return await commands.MessageConverter().convert(
+            ctx, f"{data['m'][0]}-{data['m'][1]}"
+        )
 
 
 class MaybeAliasedTextChannel(discord.TextChannel):
@@ -150,4 +152,4 @@ class MaybeAliasedTextChannel(discord.TextChannel):
                 f"Alias {argument} doesn't refer to a text channel."
             )
 
-        return await commands.TextChannelConverter().convert(ctx, str(data.get("tc")))
+        return await commands.TextChannelConverter().convert(ctx, str(data["tc"]))
