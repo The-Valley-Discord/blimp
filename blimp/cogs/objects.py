@@ -181,6 +181,6 @@ class Objects(BlimpCog):
         ]
         result = "\n".join([f"{d[0]}: {await self.representation(d[1])}" for d in data])
         if not result:
-            await ctx.reply("*No aliases configured.*", color=ctx.ReplyColor.I_GUESS)
+            await ctx.reply("*No aliases configured.*", color=ctx.Color.I_GUESS)
         else:
             await ctx.reply(result)

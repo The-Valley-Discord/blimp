@@ -57,7 +57,7 @@ class Welcome(BlimpCog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*Welcome configuration didn't exist.*", color=ctx.ReplyColor.I_GUESS
+                "*Welcome configuration didn't exist.*", color=ctx.Color.I_GUESS
             )
             return
 
@@ -126,7 +126,7 @@ class Welcome(BlimpCog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*Welcome configuration didn't exist.*", color=ctx.ReplyColor.I_GUESS
+                "*Welcome configuration didn't exist.*", color=ctx.Color.I_GUESS
             )
             return
 

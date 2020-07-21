@@ -47,7 +47,7 @@ async def on_command_error(ctx, error):
         ctx.log.error(
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
-        await ctx.reply("*Internal Error.*", color=ctx.ReplyColor.BAD)
+        await ctx.reply("*Internal Error.*", color=ctx.Color.BAD)
     else:
         await ctx.reply(f"*Error: {error}*", color=ctx.ReplyColor.BAD)
 

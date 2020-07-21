@@ -61,6 +61,8 @@ class Blimp(commands.Bot):
         matching empty prefix, otherwise, a space (never matches due to
         Discord's sanitizers)
         """
+        if not msg.content:
+            return " "
         if msg.content.split()[0][-1] == bot.suffix:
             return ""
 
