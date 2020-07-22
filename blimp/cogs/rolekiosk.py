@@ -1,5 +1,6 @@
-from typing import List, Union
 import json
+import re
+from typing import List, Union
 
 import discord
 from discord.ext import commands
@@ -42,9 +43,9 @@ class RoleKiosk(Blimp.Cog):
         # iterate over pairs of args
         pairwise = iter(args)
         for (emoji, role) in zip(pairwise, pairwise):
-            emoji_id = [ch for ch in emoji if ch.isdigit()]
-            if len(emoji_id) != 0:
-                emoji = int("".join(emoji_id))
+            emoji_id = re.search(r"(\d{10,})>?$", emoji)
+            if emoji_id:
+                emoji = int(emoji_id[1])
 
             result.append((emoji, role))
 
@@ -167,7 +168,7 @@ class RoleKiosk(Blimp.Cog):
         """
         On reaction creation, check if we should add roles and do so.
         """
-        if not payload.guild_id:
+        if not payload.guild_id or payload.user_id == self.bot.user.id:
             return
 
         roles = self.roles_from_payload(payload)
@@ -183,7 +184,7 @@ class RoleKiosk(Blimp.Cog):
         """
         On reaction removal, check if we should remove roles and do so.
         """
-        if not payload.guild_id:
+        if not payload.guild_id or payload.user_id == self.bot.user.id:
             return
 
         roles = self.roles_from_payload(payload)

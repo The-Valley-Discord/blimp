@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import re
 
 import discord
 from discord.ext import commands
@@ -27,7 +28,7 @@ class Board(Blimp.Cog):
         ctx: Blimp.Context,
         channel: MaybeAliasedTextChannel,
         emoji: str,
-        min_reacts: str,
+        min_reacts: int,
         post_age_limit: bool = False,
     ):
         """
@@ -43,9 +44,9 @@ class Board(Blimp.Cog):
         if not ctx.privileged_modify(channel.guild):
             return
 
-        emoji_id = [ch for ch in emoji if ch.isdigit()]
-        if len(emoji_id) != 0:
-            emoji = int("".join(emoji_id))
+        emoji_id = re.search(r"(\d{10,})>?$", emoji)
+        if emoji_id:
+            emoji = int(emoji_id[1])
 
         age = None
         if post_age_limit:

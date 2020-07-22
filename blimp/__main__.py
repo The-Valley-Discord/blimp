@@ -22,7 +22,7 @@ for source in config["log"]["suppress"].split(","):
     )
 
 bot = Blimp(
-    suffix="!",
+    suffix=config["discord"]["suffix"],
     database_path=config["database"]["path"],
     case_insensitive=True,
     activity=Blimp.random_status(),

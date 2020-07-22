@@ -65,12 +65,27 @@ class Blimp(commands.Bot):
                 if not subtitle:
                     subtitle = discord.Embed.Empty
 
-                return await self.send(
-                    "",
-                    embed=discord.Embed(color=color, description=msg).set_footer(
-                        text=subtitle
-                    ),
-                )
+                lines = msg.split("\n")
+                buf = ""
+                for line in lines:
+                    if len(buf + "\n" + line) > 2048:
+                        await self.send(
+                            "",
+                            embed=discord.Embed(
+                                color=color, description=buf
+                            ).set_footer(text=subtitle),
+                        )
+                        buf = ""
+                    else:
+                        buf += line + "\n"
+
+                if len(buf) > 0:
+                    return await self.send(
+                        "",
+                        embed=discord.Embed(color=color, description=buf).set_footer(
+                            text=subtitle
+                        ),
+                    )
 
             return await self.send("", embed=embed)
 

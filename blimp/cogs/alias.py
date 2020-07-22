@@ -116,20 +116,21 @@ class Aliasing(Blimp.Cog):
             (alias["alias"], ctx.objects.by_alias(ctx.guild.id, alias["alias"])[1])
             for alias in cursor.fetchall()
         ]
-        result = "\n".join(
-            [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
-        )
-        if not result:
-            await ctx.reply(
-                "*honest yet verbose,*\n"
-                "*no aliases 'round here.*\n"
-                "*maybe you'll change that?*",
-                subtitle="No aliases configured for this server.",
-                color=ctx.Color.I_GUESS,
+        async with ctx.typing():
+            result = "\n".join(
+                [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
             )
-            return
+            if not result:
+                await ctx.reply(
+                    "*honest yet verbose,*\n"
+                    "*no aliases 'round here.*\n"
+                    "*maybe you'll change that?*",
+                    subtitle="No aliases configured for this server.",
+                    color=ctx.Color.I_GUESS,
+                )
+                return
 
-        await ctx.reply(result)
+            await ctx.reply(result)
 
 
 class MaybeAliasedMessage(discord.Message):
