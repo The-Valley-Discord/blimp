@@ -204,11 +204,11 @@ class ParseableDatetime(datetime):
     @classmethod
     async def convert(cls, _ctx: Blimp.Context, argument: str):
         "Convert an ISO 8601 datetime string into a datetime instance."
-        dt = cls.fromisoformat(argument)
-        if not dt.tzinfo:
-            dt = dt.replace(tzinfo=timezone.utc)
+        res = cls.fromisoformat(argument)
+        if not res.tzinfo:
+            res = res.replace(tzinfo=timezone.utc)
 
-        return dt
+        return res
 
 
 class ParseableTimedelta(timedelta):

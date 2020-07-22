@@ -7,3 +7,4 @@ from .malarkey import Malarkey
 from .reminders import Reminders
 from .rolekiosk import RoleKiosk
 from .welcome import Welcome
+from .tools import Tools
