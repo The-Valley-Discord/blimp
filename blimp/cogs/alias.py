@@ -3,7 +3,6 @@ from typing import Union
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import UserInputError
 
 from customizations import Blimp
 
@@ -61,9 +60,9 @@ class Aliasing(Blimp.Cog):
         except sqlite3.DatabaseError:
             ctx.database.excute("ABORT;")
             await ctx.reply(
-                """*that word seems common*
-                *for it's an alias.*
-                *no doubles allowed.*""",
+                "*that word seems common*\n"
+                "*for it's an alias.*\n"
+                "*no doubles allowed.*",
                 subtitle=f"{alias} is already registered as an alias.",
                 color=ctx.Color.I_GUESS,
             )
@@ -88,9 +87,9 @@ class Aliasing(Blimp.Cog):
         old = ctx.objects.by_alias(ctx.guild.id, alias)
         if not old:
             await ctx.reply(
-                """*commonly you ask*
-                *to delete extant objects*
-                *though not this time.*""",
+                "*commonly you ask*\n"
+                "*to delete extant objects*\n"
+                "*though not this time.*",
                 subject="Unknown alias.",
                 color=ctx.Color.I_GUESS,
             )
@@ -122,9 +121,9 @@ class Aliasing(Blimp.Cog):
         )
         if not result:
             await ctx.reply(
-                """*honest yet verbose,*
-                *no aliases 'round here.*
-                *maybe you'll change that?*""",
+                "*honest yet verbose,*\n"
+                "*no aliases 'round here.*\n"
+                "*maybe you'll change that?*",
                 subtitle="No aliases configured for this server.",
                 color=ctx.Color.I_GUESS,
             )

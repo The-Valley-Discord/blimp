@@ -63,20 +63,22 @@ class RoleKiosk(Blimp.Cog):
 
         if user_failed_roles:
             await ctx.reply(
-                """*how promethean,*
-                *gifting roles you don't control.*
-                *yet I must decline.*""",
-                subtitle=f"You can't manage these roles: {' '.join([r.name for r in user_failed_roles])}",
+                "*how promethean,*\n"
+                "*gifting roles you don't control.*"
+                "*yet I must decline.*",
+                subtitle="You can't manage these roles: "
+                + " ".join([r.name for r in user_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
 
         if bot_failed_roles:
             await ctx.reply(
-                """*despite best efforts,*
-                *this kiosk is doomed to fail,*
-                *its roles beyond me.*""",
-                subtitle=f"The bot can't manage these roles: {' '.join([r.name for r in bot_failed_roles])}",
+                "*despite best efforts,*\n"
+                "*this kiosk is doomed to fail,*\n"
+                "*its roles beyond me.*",
+                subtitle="The bot can't manage these roles: "
+                + " ".join([r.name for r in bot_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
@@ -120,9 +122,9 @@ class RoleKiosk(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                """*trying to comply*
-                *I searched all the kiosks known*
-                *that one's still foreign*""",
+                "*trying to comply*\n"
+                "*I searched all the kiosks known*\n"
+                "*that one's still foreign*",
                 subtitle="That message isn't a role kiosk.",
                 color=ctx.Color.I_GUESS,
             )

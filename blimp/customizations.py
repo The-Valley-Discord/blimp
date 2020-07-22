@@ -71,8 +71,8 @@ class Blimp(commands.Bot):
                         text=subtitle
                     ),
                 )
-            else:
-                return await self.send("", embed=embed)
+
+            return await self.send("", embed=embed)
 
         def privileged_modify(
             self,

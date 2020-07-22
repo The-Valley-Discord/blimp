@@ -68,9 +68,9 @@ class Board(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                """*although unthought yet,*
-                *more frivolous than a Board*
-                *may be its absence.*""",
+                "*although unthought yet,*\n"
+                "*more frivolous than a Board*\n"
+                "*may be its absence.*",
                 subtitle="No Board is configured in that channel.",
                 color=ctx.Color.I_GUESS,
             )
@@ -78,8 +78,9 @@ class Board(Blimp.Cog):
 
         await ctx.reply(f"*Deleted board configuration for {channel.mention}.*")
 
+    @staticmethod
     def format_message(
-        self, msg: discord.Message, reaction: discord.Reaction
+        msg: discord.Message, reaction: discord.Reaction
     ) -> discord.Embed:
         "Turn a message into an embed for the Board."
 
