@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 import discord
@@ -27,6 +28,7 @@ class Board(Blimp.Cog):
         channel: MaybeAliasedTextChannel,
         emoji: str,
         min_reacts: str,
+        post_age_limit: bool = False,
     ):
         """
         Update a Board, overwriting prior configuration.
@@ -34,6 +36,8 @@ class Board(Blimp.Cog):
         in which case the repost will trigger for any emoji.
         <min_reacts> is how many emoji you want the messages to have before
         they get reposted.
+        <post_age_limit> controls if posts older than the board configuration
+        should be reposted.
         """
 
         if not ctx.privileged_modify(channel.guild):
@@ -43,13 +47,18 @@ class Board(Blimp.Cog):
         if len(emoji_id) != 0:
             emoji = int("".join(emoji_id))
 
+        age = None
+        if post_age_limit:
+            age = ctx.message.created_at
+
         ctx.database.execute(
-            """INSERT OR REPLACE INTO board_configuration(oid, guild_oid, data)
-            VALUES(:oid, :guild_oid, :data)""",
+            """INSERT OR REPLACE INTO board_configuration(oid, guild_oid, data, post_age_limit)
+            VALUES(:oid, :guild_oid, :data, :age)""",
             {
                 "oid": ctx.objects.make_object(tc=channel.id),
                 "guild_oid": ctx.objects.make_object(g=channel.guild.id),
                 "data": json.dumps([emoji, min_reacts]),
+                "age": age,
             },
         )
 
@@ -126,6 +135,13 @@ class Board(Blimp.Cog):
         orig_message = await orig_channel.fetch_message(payload.message_id)
 
         for board in boards:
+            if board[
+                "post_age_limit"
+            ] and orig_message.created_at < datetime.fromisoformat(
+                board["post_age_limit"]
+            ):
+                return
+
             emoji, min_reacts = json.loads(board["data"])
             min_reacts = int(min_reacts)
             possible_reactions = [

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS board_configuration (
     oid INTEGER PRIMARY KEY,
     guild_oid INTEGER NOT NULL,
     data STRING NOT NULL,
+    post_age_limit DATE,
     FOREIGN KEY (oid) REFERENCES objects(oid),
     FOREIGN KEY (guild_oid) REFERENCES objects(oid)
 );
