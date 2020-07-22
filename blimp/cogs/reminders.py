@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Union
 
 import discord
@@ -125,14 +125,15 @@ class Reminders(Blimp.Cog):
         elif isinstance(when, timedelta):
             due = ctx.message.created_at + when
 
-        if due < datetime.utcnow():
+        if due < datetime.now(timezone.utc):
             await ctx.reply(
                 "*tempting as it seems*\n"
                 "*it's best not to venture there*\n"
                 "*let the past lie dead.*",
                 subtitle="You can't set reminders for past events.",
-                color=ctx.color.I_GUESS,
+                color=ctx.Color.I_GUESS,
             )
+            return
 
         invoked = await ctx.reply(f"*Reminder set for {due}.*")
 

