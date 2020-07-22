@@ -27,7 +27,7 @@ bot = Blimp(
     case_insensitive=True,
     activity=Blimp.random_status(),
 )
-for cog in [cogs.RoleKiosk, cogs.Aliasing, cogs.Welcome, cogs.Board]:
+for cog in [cogs.RoleKiosk, cogs.Aliasing, cogs.Welcome, cogs.Board, cogs.Reminders]:
     bot.add_cog(cog(bot))
 
 

@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 import enum
 import logging
 import random
+import re
 import sqlite3
 from typing import Union
 
@@ -63,14 +65,14 @@ class Blimp(commands.Bot):
                 if not subtitle:
                     subtitle = discord.Embed.Empty
 
-                await self.send(
+                return await self.send(
                     "",
                     embed=discord.Embed(color=color, description=msg).set_footer(
                         text=subtitle
                     ),
                 )
             else:
-                await self.send("", embed=embed)
+                return await self.send("", embed=embed)
 
         def privileged_modify(
             self,
@@ -176,3 +178,46 @@ class Blimp(commands.Bot):
                 return "[Failed to link channel]"
 
         raise ValueError(f"can't link to {data.keys()}")
+
+
+class ParseableDatetime(datetime):
+    "Just datetime but with support for the discordpy converter thing."
+
+    @classmethod
+    async def convert(cls, _ctx: Blimp.Context, argument: str):
+        "Convert an ISO 8601 datetime string into a datetime instance."
+        return cls.fromisoformat(argument)
+
+
+class ParseableTimedelta(timedelta):
+    "Just timedelta but with support for the discordpy converter thing."
+
+    @classmethod
+    async def convert(cls, _ctx: Blimp.Context, argument: str):
+        """
+        Convert a string in the form [NNNd] [NNNh] [NNNm] [NNNs] into a
+        timedelta.
+        """
+
+        delta = cls()
+
+        daysm = re.search(r"(\d{1,3}) ?d(ays?)?", argument)
+        if daysm:
+            delta += cls(days=int(daysm[1]))
+
+        hoursm = re.search(r"(\d{1,3}) ?h(ours?)?", argument)
+        if hoursm:
+            delta += cls(hours=int(hoursm[1]))
+
+        minsm = re.search(r"(\d{1,3}) ?m((inutes?)?|(ins?)?)?", argument)
+        if minsm:
+            delta += cls(minutes=int(minsm[1]))
+
+        secsm = re.search(r"(\d{1,3}) ?s((econds?)?|(ecs?)?)?", argument)
+        if secsm:
+            delta += cls(seconds=int(secsm[1]))
+
+        if delta == timedelta():
+            raise commands.BadArgument("Time difference may not be zero.")
+
+        return delta

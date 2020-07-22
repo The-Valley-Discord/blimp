@@ -38,3 +38,12 @@ CREATE TABLE IF NOT EXISTS board_entries (
     FOREIGN KEY (oid) REFERENCES objects(oid),
     FOREIGN KEY (original_oid) REFERENCES objects(oid)
 );
+
+CREATE TABLE IF NOT EXISTS reminders_entries (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    message_oid INTEGER NOT NULL,
+    due DATE NOT NULL,
+    text STRING NOT NULL,
+    FOREIGN KEY (message_oid) REFERENCES objects(oid)
+);
