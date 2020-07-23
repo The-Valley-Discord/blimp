@@ -124,13 +124,17 @@ class Blimp(commands.Bot):
             self.bot = bot
             self.log = bot.log.getChild(self.__class__.__name__)
 
-    def __init__(self, suffix, database_path, **kwargs):
-        self.suffix = suffix
+    def __init__(self, config, **kwargs):
+        self.config = config
+
+        self.suffix = config["discord"]["suffix"]
 
         self.log = logging.getLogger("blimp")
         self.log.setLevel(logging.INFO)
 
-        self.database = sqlite3.connect(database_path, isolation_level=None)
+        self.database = sqlite3.connect(
+            config["database"]["path"], isolation_level=None
+        )
         self.database.row_factory = sqlite3.Row
 
         self.objects = BlimpObjects(self.database)

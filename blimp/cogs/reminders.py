@@ -8,9 +8,10 @@ from customizations import Blimp, ParseableDatetime, ParseableTimedelta
 
 
 class Reminders(Blimp.Cog):
-    """
-    Reminding you of things that you believe are going to happen.
-    """
+    """*Reminding you of things that you believe are going to happen.*
+    Reminders allow you to set notifications for a future self. When the time
+    comes, BLIMP will ping you with a text you set and a link to the original
+    message."""
 
     def __init__(self, *args):
         self.execute_reminders.start()  # pylint: disable=no-member
@@ -80,12 +81,12 @@ class Reminders(Blimp.Cog):
         await ctx.reply("\n".join(rows))
 
     @commands.command(parent=reminders)
-    async def delete(self, ctx: Blimp.Context, _id: int):
+    async def delete(self, ctx: Blimp.Context, number: int):
         "Delete one of your reminders."
 
         old = ctx.database.execute(
             "SELECT * FROM reminders_entries WHERE user_id=:user_id AND id=:id",
-            {"user_id": ctx.author.id, "id": _id},
+            {"user_id": ctx.author.id, "id": number},
         ).fetchone()
         if not old:
             await ctx.reply(
@@ -99,10 +100,10 @@ class Reminders(Blimp.Cog):
 
         ctx.database.execute(
             "DELETE FROM reminders_entries WHERE user_id=:user_id AND id=:id",
-            {"user_id": ctx.author.id, "id": _id},
+            {"user_id": ctx.author.id, "id": number},
         )
 
-        await ctx.reply(f"*Successfully deleted reminder #{_id}.*")
+        await ctx.reply(f"*Successfully deleted reminder #{number}.*")
 
     @commands.command()
     async def remindme(
@@ -114,9 +115,8 @@ class Reminders(Blimp.Cog):
     ):
         """Add a timed reminder for yourself.
 
-        <when> may be a timestamp in ISO 8601 format ("YYYY-MM-DD HH:MM:SS") or
+        `when` may be a timestamp in ISO 8601 format ("YYYY-MM-DD HH:MM:SS") or
         a delta from now, like "90 days" or 1h or "1 minute 30secs".
-
         You will be reminded either in this channel or via DM if the channel is
         no longer reachable."""
         due = None

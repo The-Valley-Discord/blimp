@@ -11,15 +11,14 @@ from .alias import MaybeAliasedMessage
 
 
 class RoleKiosk(Blimp.Cog):
-    """
-    Handing out fancy badges.
-    """
+    """*Handing out fancy badges.*
+    Role Kiosks allow you to have members assign roles to themselves
+    by reacting to a message with emoji. To modify role kiosks, you both
+    need to be able to manage the server and all roles you want to offer."""
 
     @commands.group()
     async def kiosk(self, ctx: Blimp.Context):
-        """
-        Manage your guild's role kiosks.
-        """
+        "Manage your server's role kiosks."
 
     @commands.command(parent=kiosk)
     async def update(
@@ -110,9 +109,7 @@ class RoleKiosk(Blimp.Cog):
     async def delete(
         self, ctx: Blimp.Context, msg: MaybeAliasedMessage,
     ):
-        """
-        Delete a role kiosk (but not the message).
-        """
+        "Delete a role kiosk (but not the message)."
 
         if not ctx.privileged_modify(msg.guild):
             return
@@ -140,9 +137,7 @@ class RoleKiosk(Blimp.Cog):
     def roles_from_payload(
         self, payload: discord.RawReactionActionEvent
     ) -> List[discord.Role]:
-        """
-        Turn a reaction payload into a list of roles to apply or take away.
-        """
+        "Turn a reaction payload into a list of roles to apply or take away."
 
         cursor = self.bot.database.execute(
             "SELECT data FROM rolekiosk_entries WHERE oid=:oid",
@@ -165,9 +160,7 @@ class RoleKiosk(Blimp.Cog):
 
     @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        """
-        On reaction creation, check if we should add roles and do so.
-        """
+        "On reaction creation, check if we should add roles and do so."
         if not payload.guild_id or payload.user_id == self.bot.user.id:
             return
 
@@ -181,9 +174,7 @@ class RoleKiosk(Blimp.Cog):
 
     @Blimp.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        """
-        On reaction removal, check if we should remove roles and do so.
-        """
+        "On reaction removal, check if we should remove roles and do so."
         if not payload.guild_id or payload.user_id == self.bot.user.id:
             return
 

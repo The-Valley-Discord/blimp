@@ -6,17 +6,16 @@ from customizations import Blimp
 
 
 class Tools(Blimp.Cog):
-    """
-    Semi-useful things, actually.
-    """
+    """*Semi-useful things, actually.*
+    This is a collection of commands that relate to everyday management
+    and aren't significant enough to warrant their own module."""
 
     @commands.command()
     async def cleanup(self, ctx: Blimp.Context, limit: int = 20, any_bot: bool = False):
         """Go through the last messages and delete bot responses.
 
-        <limit> controls the amount of messages searched, the default is 20.
-
-        If <any_bot> is enabled, will clear messages by any bot and not
+        `limit` controls the amount of messages searched, the default is 20.
+        If `any_bot` is provided, will clear messages by any bot and not
         just BLIMP's."""
         if not ctx.privileged_modify(ctx.channel):
             return

@@ -11,9 +11,8 @@ from .alias import MaybeAliasedTextChannel
 
 
 class Malarkey(Blimp.Cog):
-    """
-    Silly things.
-    """
+    """*Silly things.*
+    And you know why? Because life itself is filled with no reason."""
 
     pings = ["Pong!", "Ping!", "DING!", "Pyongyang!", "PLONK", "Pink!"]
 

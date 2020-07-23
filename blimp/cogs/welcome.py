@@ -9,24 +9,24 @@ from .alias import MaybeAliasedTextChannel
 
 
 class Welcome(Blimp.Cog):
-    """
-    Greeting and goodbye-ing people.
-    """
+    """*Greeting and goodbye-ing people.*
+    Welcome and Goodbye allow you to greet and see off users that join/leave
+    your server. The messages allow you to mention the user in question, but
+    don't offer a lot of detail a proper logging bot would provide, mostly
+    because that's a different use case."""
 
     @commands.group()
     async def welcome(self, ctx: Blimp.Context):
-        """
-        Configure user-facing join notifications.
-        """
+        "Configure user-facing join notifications."
 
     @commands.command(parent=welcome, name="update")
     async def w_update(
         self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
-        """
-        Update the guild's welcome messages, overwriting prior configuration.
-        In the greeting, $user is replaced with a mention of the user joining.
-        """
+        """Update user-facing join messages for this server.
+        
+        `channel` designates where the messages will be posted.
+        In `greeting`, $user is replaced with a mention of the user joining."""
         if not ctx.privileged_modify(channel.guild):
             return
 
@@ -45,9 +45,7 @@ class Welcome(Blimp.Cog):
 
     @commands.command(parent=welcome, name="disable")
     async def w_disable(self, ctx: Blimp.Context):
-        """
-        Disable the guild's welcome messages, deleting prior configuration.
-        """
+        "Disable the server's welcome messages and delete stored data."
         if not ctx.privileged_modify(ctx.guild):
             return
         cursor = ctx.database.execute(
@@ -69,7 +67,7 @@ class Welcome(Blimp.Cog):
     @Blimp.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         """
-        Look up if we have a configuration for this guild and greet accordingly.
+        Look up if we have a configuration for this guild and greet if so.
         """
         objects = self.bot.objects
 
@@ -88,18 +86,16 @@ class Welcome(Blimp.Cog):
 
     @commands.group()
     async def goodbye(self, ctx: Blimp.Context):
-        """
-        Configure user-facing leave notifications.
-        """
+        "Configure user-facing leave notifications."
 
     @commands.command(parent=goodbye, name="update")
     async def g_update(
         self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
-        """
-        Update the guild's goodbye messages, overwriting prior configuration.
-        In the greeting, $user is replaced with a mention of the user leaving.
-        """
+        """Update user-facing leave messages for this server.
+        
+        `channel` designates where the messages will be posted.
+        In `greeting`, $user is replaced with a mention of the user leaving."""
         if not ctx.privileged_modify(channel.guild):
             return
 
@@ -118,9 +114,7 @@ class Welcome(Blimp.Cog):
 
     @commands.command(parent=goodbye, name="disable")
     async def g_disable(self, ctx: Blimp.Context):
-        """
-        Disable the guild's goodbye messages, deleting prior configuration.
-        """
+        "Disable the server's goodbye messages and delete stored data."
         if not ctx.privileged_modify(ctx.guild):
             return
         cursor = ctx.database.execute(
@@ -141,10 +135,7 @@ class Welcome(Blimp.Cog):
 
     @Blimp.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        """
-        Look up if we have a configuration for this guild and say goodbye
-        accordingly.
-        """
+        "Look up if we have a configuration for this guild and say goodbye if so."
         objects = self.bot.objects
 
         cursor = self.bot.database.execute(

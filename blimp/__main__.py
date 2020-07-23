@@ -24,11 +24,7 @@ for source in config["log"]["suppress"].split(","):
     )
 
 bot = Blimp(
-    suffix=config["discord"]["suffix"],
-    database_path=config["database"]["path"],
-    case_insensitive=True,
-    activity=Blimp.random_status(),
-    help_command=None,
+    config, case_insensitive=True, activity=Blimp.random_status(), help_command=None,
 )
 for cog in [
     cogs.RoleKiosk,
@@ -62,11 +58,13 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
     embed = discord.Embed(color=ctx.Color.I_GUESS, title="BLIMP Manual")
     if not subject:
         embed.description = (
-            "This is the *[BLIMP](https://dingenskirchen.systems/blimp) "
+            f"This is the *[BLIMP]({ctx.bot.config['info']['web']}) "
             "Levitating Intercommunication Management Programme*, a management "
-            f"bot for Discord.\nFor detailed help, use `help{ctx.bot.suffix} "
-            "<subject>` with individual commands or any of the larger features "
-            "listed below."
+            f"bot for Discord.\nFor detailed help, use `{signature(_help)}`"
+            "with individual commands or any of the larger features "
+            "listed below.\nThere's also an [online manual]"
+            f"({ctx.bot.config['info']['manual']}) and, of course, the [source "
+            f"code]({ctx.bot.config['info']['source']})."
         )
         embed.add_field(name="Core", value=signature(_help))
 
@@ -80,7 +78,9 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
 
             embed.add_field(
                 name=name,
-                value=cog.description + "\n" + "\n".join(sorted(all_commands)),
+                value=cog.description.split("\n")[0]
+                + "\n"
+                + "\n".join(sorted(all_commands)),
                 inline=False,
             )
     else:
@@ -104,7 +104,10 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
                     inline=False,
                 )
         for command in ctx.bot.walk_commands():
-            if subject.casefold() == command.qualified_name.casefold():
+            if subject.casefold() in (
+                command.qualified_name.casefold(),
+                command.qualified_name.replace(ctx.bot.suffix, "").casefold(),
+            ):
                 embed.add_field(
                     name=f"Command: {signature(command)}",
                     value=command.help,

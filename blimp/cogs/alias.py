@@ -8,7 +8,10 @@ from customizations import Blimp
 
 
 class Aliasing(Blimp.Cog):
-    "Giving names to things so you don't have to remember the gory details."
+    """*Giving names to things.*
+    Aliases allow you to refer to channels and messages (more targets to come)
+    using simple, server-specific codes like `'rules` or `'the_bread_message`,
+    that way you don't need to remember unwieldly Discord IDs."""
 
     @staticmethod
     def validate_alias(string) -> None:
@@ -75,9 +78,7 @@ class Aliasing(Blimp.Cog):
 
     @commands.command(parent=alias)
     async def delete(self, ctx: Blimp.Context, alias: str):
-        """
-        Delete an alias, freeing it up for renewed use.
-        """
+        "Delete an alias, freeing it up for renewed use."
 
         if not ctx.privileged_modify(ctx.guild):
             return
@@ -104,11 +105,9 @@ class Aliasing(Blimp.Cog):
             f"*Deleted alias `{alias}` (was {await ctx.bot.represent_object(old[1])}).*"
         )
 
-    @commands.command(parent=alias)
-    async def list(self, ctx: Blimp.Context):
-        """
-        List all aliases currently configured for this server.
-        """
+    @commands.command(parent=alias, name="list")
+    async def _list(self, ctx: Blimp.Context):
+        "List all aliases currently configured for this server."
         cursor = ctx.database.execute(
             "SELECT * FROM aliases WHERE gid=:gid", {"gid": ctx.guild.id}
         )

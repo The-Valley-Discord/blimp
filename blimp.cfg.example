@@ -5,3 +5,11 @@ token = not telling you
 [log]
 level = INFO
 suppress = discord.gateway,discord.client
+
+[database]
+path = ./blimp.db
+
+[info]
+web = https://dingenskirchen.systems/blimp
+manual = https://dingenskirchen.systems/blimp/manual
+source = https://github.com/The-Valley-Discord/blimp

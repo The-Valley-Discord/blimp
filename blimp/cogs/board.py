@@ -10,17 +10,14 @@ from .alias import MaybeAliasedTextChannel
 
 
 class Board(Blimp.Cog):
-    """
-    Putting up monuments to all your sins.
-    """
+    """*Putting up monuments to all your sins.*
+    A Board is a channel that gets any messages that get enough of certain
+    reactions reposted into it. Also known as "starboard" on other, merely
+    land-bound, bots."""
 
     @commands.group()
     async def board(self, ctx: Blimp.Context):
-        """
-        The Board is a channel that gets any messages that get enough
-        of certain reactions reposted into it. Also known as "starboard" on
-        other, merely land-bound, bots.
-        """
+        "Configure boards in this server."
 
     @commands.command(parent=board)
     async def update(
@@ -31,15 +28,13 @@ class Board(Blimp.Cog):
         min_reacts: int,
         post_age_limit: bool = False,
     ):
-        """
-        Update a Board, overwriting prior configuration.
-        <emoji> may be any custom or built-in emoji or a literal "any",
+        """Update a Board, overwriting prior configuration.
+        `emoji` may be any custom or built-in emoji or a literal "any",
         in which case the repost will trigger for any emoji.
-        <min_reacts> is how many emoji you want the messages to have before
+        `min_reacts` is how many emoji you want the messages to have before
         they get reposted.
-        <post_age_limit> controls if posts older than the board configuration
-        should be reposted.
-        """
+        `post_age_limit` controls if posts older than the board configuration
+        should be reposted."""
 
         if not ctx.privileged_modify(channel.guild):
             return
