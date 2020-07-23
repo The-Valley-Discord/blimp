@@ -123,7 +123,7 @@ class Reminders(Blimp.Cog):
         if isinstance(when, datetime):
             due = when
         elif isinstance(when, timedelta):
-            due = ctx.message.created_at + when
+            due = (ctx.message.created_at + when).replace(tzinfo=timezone.utc)
 
         if due < datetime.now(timezone.utc):
             await ctx.reply(
