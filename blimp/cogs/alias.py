@@ -17,11 +17,11 @@ class Aliasing(Blimp.Cog):
     def validate_alias(string) -> None:
         """Check if something should be allowed to be an alias."""
         if len(string) < 2 or string[0] != "'":
-            raise ValueError(
+            raise commands.UserInputError(
                 "Aliases must start with ' and have at least one character after that."
             )
         if len([ch for ch in string if ch.isspace()]) > 0:
-            raise ValueError("Aliases may not contain whitespace.")
+            raise commands.UserInputError("Aliases may not contain whitespace.")
 
     @commands.group()
     async def alias(self, ctx: Blimp.Context):
@@ -115,21 +115,20 @@ class Aliasing(Blimp.Cog):
             (alias["alias"], ctx.objects.by_alias(ctx.guild.id, alias["alias"])[1])
             for alias in cursor.fetchall()
         ]
-        async with ctx.typing():
-            result = "\n".join(
-                [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
+        result = "\n".join(
+            [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
+        )
+        if not result:
+            await ctx.reply(
+                "*honest yet verbose,*\n"
+                "*no aliases 'round here.*\n"
+                "*maybe you'll change that?*",
+                subtitle="No aliases configured for this server.",
+                color=ctx.Color.I_GUESS,
             )
-            if not result:
-                await ctx.reply(
-                    "*honest yet verbose,*\n"
-                    "*no aliases 'round here.*\n"
-                    "*maybe you'll change that?*",
-                    subtitle="No aliases configured for this server.",
-                    color=ctx.Color.I_GUESS,
-                )
-                return
+            return
 
-            await ctx.reply(result)
+        await ctx.reply(result)
 
 
 class MaybeAliasedMessage(discord.Message):

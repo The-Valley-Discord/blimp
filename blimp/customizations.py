@@ -187,10 +187,17 @@ class Blimp(commands.Bot):
         if "m" in data:
             try:
                 channel = self.get_channel(data["m"][0])
-                url = (await channel.fetch_message(data["m"][1])).jump_url
-                return f"[Message in #{channel.name}]({url})"
+                guild = "@me"
+                if channel.guild:
+                    guild = channel.guild.id
+
+                return (
+                    f"[Message in #{channel.name}]("
+                    f"https://discord.com/channels/{guild}/{data['m'][0]}/{data['m'][1]}"
+                    ")"
+                )
             except:  # pylint: disable=bare-except
-                return "[Failed to link message]"
+                return "[failed to link message]"
 
         if "tc" in data:
             try:

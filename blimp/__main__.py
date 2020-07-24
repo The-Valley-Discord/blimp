@@ -128,9 +128,9 @@ async def on_command_error(ctx, error):
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
         await ctx.reply(
-            """*soon questions arise:*
-            *me unwilling, what did you*
-            *want in the first place?*""",
+            "*soon questions arise:\n*"
+            "*me unwilling, what did you*\n"
+            "*want in the first place?*",
             subtitle="Internal Error.",
             color=ctx.Color.BAD,
         )
@@ -138,9 +138,9 @@ async def on_command_error(ctx, error):
         return
     else:
         await ctx.reply(
-            """*here's news, good and bad:*
-            *the bad, something clearly broke.*
-            *the good? not my fault.*""",
+            "*here's news, good and bad:*\n"
+            "*the bad, something clearly broke.*\n"
+            "*the good? not my fault.*",
             subtitle=f"Error: {error}",
             color=ctx.Color.BAD,
         )
