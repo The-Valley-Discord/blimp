@@ -103,7 +103,7 @@ class Blimp(commands.Bot):
 
             kind = subject.__class__
             if kind == discord.TextChannel:
-                return self.author.permissions_for(subject).manage_messages
+                return self.author.permissions_in(subject).manage_messages
             if kind == discord.Member:
                 return self.author.guild_permissions.ban_users
             if kind == discord.Guild:

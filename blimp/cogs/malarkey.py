@@ -1,13 +1,10 @@
-from datetime import datetime, timedelta, timezone
-import json
+from datetime import datetime, timedelta
 import random
-import re
 
 import discord
 from discord.ext import commands
 
 from customizations import Blimp
-from .alias import MaybeAliasedTextChannel
 
 
 class Malarkey(Blimp.Cog):
@@ -40,4 +37,3 @@ class Malarkey(Blimp.Cog):
                 f"Outbound: {out_delta/timedelta(milliseconds=1)}ms"
             )
         )
-

@@ -24,7 +24,7 @@ class Welcome(Blimp.Cog):
         self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
         """Update user-facing join messages for this server.
-        
+
         `channel` designates where the messages will be posted.
         In `greeting`, $user is replaced with a mention of the user joining."""
         if not ctx.privileged_modify(channel.guild):
@@ -93,7 +93,7 @@ class Welcome(Blimp.Cog):
         self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel, *, greeting: str
     ):
         """Update user-facing leave messages for this server.
-        
+
         `channel` designates where the messages will be posted.
         In `greeting`, $user is replaced with a mention of the user leaving."""
         if not ctx.privileged_modify(channel.guild):

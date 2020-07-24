@@ -21,7 +21,7 @@ class Reminders(Blimp.Cog):
     async def execute_reminders(self):
         "Look at overdue reminders and send notifications out."
         cursor = self.bot.database.execute(
-            "SELECT * FROM reminders_entries WHERE due < strftime('%Y-%m-%dT%H:%M:%S', 'now')"
+            "SELECT * FROM reminders_entries WHERE due < datetime('now')"
         )
         cursor.arraysize = 5
         entries = cursor.fetchmany()
@@ -39,6 +39,11 @@ class Reminders(Blimp.Cog):
                     "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
                 )
 
+            timestamp = (
+                discord.utils.snowflake_time(invoke_msg[1])
+                .replace(microsecond=0, tzinfo=timezone.utc)
+                .replace(tzinfo=None)
+            )
             await channel.send(
                 self.bot.get_user(entry["user_id"]).mention,
                 embed=discord.Embed(
@@ -46,7 +51,7 @@ class Reminders(Blimp.Cog):
                 ).add_field(
                     name="Context",
                     value=f"{await self.bot.represent_object({'m':invoke_msg})} "
-                    f"from {discord.utils.snowflake_time(invoke_msg[1])}",
+                    f"from {timestamp} UTC",
                 ),
             )
 
@@ -76,7 +81,8 @@ class Reminders(Blimp.Cog):
         for rem in rems:
             invoke_msg = ctx.objects.by_oid(rem["message_oid"])
             invoke_link = await self.bot.represent_object(invoke_msg)
-            rows.append(f"`{rem['id']}` {rem['text']} ({rem['due']}, {invoke_link})")
+            timestamp = datetime.fromisoformat(rem["due"]).replace(tzinfo=None)
+            rows.append(f"`{rem['id']}` {rem['text']} ({timestamp} UTC, {invoke_link})")
 
         await ctx.reply("\n".join(rows))
 
@@ -121,9 +127,12 @@ class Reminders(Blimp.Cog):
         no longer reachable."""
         due = None
         if isinstance(when, datetime):
-            due = when
+            due = when.replace(microsecond=0)
         elif isinstance(when, timedelta):
-            due = (ctx.message.created_at + when).replace(tzinfo=timezone.utc)
+            due = (
+                ctx.message.created_at.replace(microsecond=0, tzinfo=timezone.utc)
+                + when
+            )
 
         if due < datetime.now(timezone.utc):
             await ctx.reply(
@@ -135,7 +144,7 @@ class Reminders(Blimp.Cog):
             )
             return
 
-        invoked = await ctx.reply(f"*Reminder set for {due}.*")
+        invoked = await ctx.reply(f"*Reminder set for {due.replace(tzinfo=None)} UTC.*")
 
         ctx.database.execute(
             """INSERT INTO reminders_entries(user_id, message_oid, due, text)
@@ -145,7 +154,7 @@ class Reminders(Blimp.Cog):
                 "message_oid": ctx.objects.make_object(
                     m=[invoked.channel.id, invoked.id]
                 ),
-                "due": due.isoformat(),
+                "due": due.astimezone(tz=timezone.utc).isoformat(sep=" "),
                 "text": text,
             },
         )
