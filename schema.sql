@@ -48,3 +48,10 @@ CREATE TABLE IF NOT EXISTS reminders_entries (
     text STRING NOT NULL,
     FOREIGN KEY (message_oid) REFERENCES objects(oid)
 );
+
+CREATE TABLE IF NOT EXISTS logging_configuration (
+    guild_oid INTEGER PRIMARY KEY,
+    channel_oid INTEGER,
+    FOREIGN KEY (guild_oid) REFERENCES objects(oid),
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid)
+);

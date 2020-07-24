@@ -8,3 +8,4 @@ from .reminders import Reminders
 from .rolekiosk import RoleKiosk
 from .welcome import Welcome
 from .tools import Tools
+from .logging import Logging

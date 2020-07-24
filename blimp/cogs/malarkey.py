@@ -16,7 +16,11 @@ class Malarkey(Blimp.Cog):
     @Blimp.Cog.listener()
     async def on_message(self, msg: discord.Message):
         "React to messages that ping the bot."
-        if self.bot.user in msg.mentions or msg.mention_everyone:
+        if (
+            not msg.author == self.bot.user
+            and self.bot.user in msg.mentions
+            or msg.mention_everyone
+        ):
             await msg.add_reaction("❗")
 
     @commands.command()

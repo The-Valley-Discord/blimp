@@ -93,6 +93,34 @@ class RoleKiosk(Blimp.Cog):
         for emoji in [item for item in args if item.__class__ == str]:
             await msg.add_reaction(emoji)
 
+        log_embed = discord.Embed(
+            description=f"{ctx.author} updated "
+            f"[role kiosk in #{msg.channel.name}]({msg.jump_url}).",
+            color=ctx.Color.I_GUESS,
+        )
+
+        old = ctx.database.execute(
+            "SELECT * FROM rolekiosk_entries WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(m=[msg.channel.id, msg.id])},
+        ).fetchone()
+        if old:
+            log_embed.add_field(
+                name="Old",
+                value="\n".join(
+                    [
+                        f"{d[0]} {msg.guild.get_role(d[1]).mention}"
+                        for d in json.loads(old["data"])
+                    ]
+                ),
+            )
+
+        log_embed.add_field(
+            name="New",
+            value="\n".join(
+                [f"{d[0]} {msg.guild.get_role(d[1]).mention}" for d in result]
+            ),
+        )
+
         ctx.database.execute(
             "INSERT OR REPLACE INTO rolekiosk_entries(oid, data) VALUES(:oid,json(:data))",
             {
@@ -100,6 +128,8 @@ class RoleKiosk(Blimp.Cog):
                 "data": json.dumps(result),
             },
         )
+
+        await ctx.bot.post_log(msg.guild, embed=log_embed)
 
         await ctx.reply(
             f"*Overwrote [role kiosk in #{msg.channel.name}]({msg.jump_url}).*"

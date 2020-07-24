@@ -30,6 +30,19 @@ class Welcome(Blimp.Cog):
         if not ctx.privileged_modify(channel.guild):
             return
 
+        logging_embed = discord.Embed(
+            description=f"{ctx.author} updated Welcome.", color=ctx.Color.I_GUESS
+        )
+
+        old = ctx.database.execute(
+            "SELECT * FROM welcome_configuration WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(g=channel.guild.id)},
+        ).fetchone()
+        if old and old["join_data"]:
+            data = json.loads(old["join_data"])
+            old_channel = ctx.objects.by_oid(data[0])["tc"]
+            logging_embed.add_field(name="Old", value=f"<#{old_channel}>\n{data[1]}")
+
         ctx.database.execute(
             """INSERT INTO welcome_configuration(oid, join_data) VALUES(:oid, json(:data))
             ON CONFLICT(oid) DO UPDATE SET join_data=excluded.join_data""",
@@ -38,6 +51,10 @@ class Welcome(Blimp.Cog):
                 "data": json.dumps([ctx.objects.make_object(tc=channel.id), greeting]),
             },
         )
+
+        logging_embed.add_field(name="New", value=f"<#{channel.id}>\n{greeting}")
+        await self.bot.post_log(ctx.guild, embed=logging_embed)
+
         await ctx.reply("*Overwrote welcome configuration, example message follows.*")
         await ctx.send(
             Template(greeting).safe_substitute({"user": channel.guild.me.mention})
@@ -61,6 +78,8 @@ class Welcome(Blimp.Cog):
                 color=ctx.Color.I_GUESS,
             )
             return
+
+        await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Welcome.")
 
         await ctx.reply("*Deleted welcome configuration.*")
 
@@ -99,6 +118,19 @@ class Welcome(Blimp.Cog):
         if not ctx.privileged_modify(channel.guild):
             return
 
+        logging_embed = discord.Embed(
+            description=f"{ctx.author} updated Goodbye.", color=ctx.Color.I_GUESS
+        )
+
+        old = ctx.database.execute(
+            "SELECT * FROM welcome_configuration WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(g=channel.guild.id)},
+        ).fetchone()
+        if old and old["leave_data"]:
+            data = json.loads(old["leave_data"])
+            old_channel = ctx.objects.by_oid(data[0])["tc"]
+            logging_embed.add_field(name="Old", value=f"<#{old_channel}>\n{data[1]}")
+
         ctx.database.execute(
             """INSERT INTO welcome_configuration(oid, leave_data) VALUES(:oid, json(:data))
             ON CONFLICT(oid) DO UPDATE SET leave_data=excluded.leave_data""",
@@ -107,6 +139,10 @@ class Welcome(Blimp.Cog):
                 "data": json.dumps([ctx.objects.make_object(tc=channel.id), greeting]),
             },
         )
+
+        logging_embed.add_field(name="New", value=f"<#{channel.id}>\n{greeting}")
+        await self.bot.post_log(ctx.guild, embed=logging_embed)
+
         await ctx.reply("*Overwrote goodbye configuration, example message follows.*")
         await ctx.send(
             Template(greeting).safe_substitute({"user": channel.guild.me.mention})
@@ -130,6 +166,8 @@ class Welcome(Blimp.Cog):
                 color=ctx.Color.I_GUESS,
             )
             return
+
+        await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Goodbye.")
 
         await ctx.reply("*Deleted goodbye configuration.*")
 

@@ -55,7 +55,7 @@ class Blimp(commands.Bot):
 
         async def reply(
             self,
-            msg: str,
+            msg: str = None,
             subtitle: str = None,
             color: Color = Color.GOOD,
             embed: discord.Embed = None,
@@ -207,6 +207,18 @@ class Blimp(commands.Bot):
                 return "[Failed to link channel]"
 
         raise ValueError(f"can't link to {data.keys()}")
+
+    async def post_log(self, guild: discord.Guild, *args, **kwargs):
+        "Post a log entry to a guild, usage same as ctx.reply"
+        configuration = self.database.execute(
+            "SELECT * FROM logging_configuration WHERE guild_oid=guild_oid",
+            {"guild_oid": self.objects.by_data(g=guild.id)},
+        ).fetchone()
+        if not configuration:
+            return
+
+        channel = self.objects.by_oid(configuration["channel_oid"])["tc"]
+        await self.Context.reply(self.get_channel(channel), *args, **kwargs)
 
 
 class ParseableDatetime(datetime):

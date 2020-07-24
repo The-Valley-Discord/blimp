@@ -34,6 +34,7 @@ for cog in [
     cogs.Reminders,
     cogs.Malarkey,
     cogs.Tools,
+    cogs.Logging,
 ]:
     bot.add_cog(cog(bot))
 
@@ -128,7 +129,7 @@ async def on_command_error(ctx, error):
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
         await ctx.reply(
-            "*soon questions arise:\n*"
+            "*soon questions arise:*\n"
             "*me unwilling, what did you*\n"
             "*want in the first place?*",
             subtitle="Internal Error.",

@@ -47,6 +47,30 @@ class Board(Blimp.Cog):
         if post_age_limit:
             age = ctx.message.created_at
 
+        logging_embed = discord.Embed(
+            description=f"{ctx.author} updated Board {channel.mention}.",
+            color=ctx.Color.I_GUESS,
+        )
+
+        old = ctx.database.execute(
+            "SELECT * FROM board_configuration WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(tc=channel.id)},
+        ).fetchone()
+        if old:
+            data = json.loads(old["data"])
+            emoji_fmt = data[0]
+            if isinstance(data[0], int):
+                emoji_fmt = (
+                    f"[Custom Emoji](https://cdn.discordapp.com/emojis/{data[0]}.png)"
+                )
+
+            logging_embed.add_field(
+                name="Old",
+                value=f"Emoji: {emoji_fmt}\n"
+                f"Minimum Reacts: {data[1]}\n"
+                f"Limit to new posts: {old['post_age_limit'] is not None}",
+            )
+
         ctx.database.execute(
             """INSERT OR REPLACE INTO board_configuration(oid, guild_oid, data, post_age_limit)
             VALUES(:oid, :guild_oid, :data, :age)""",
@@ -57,6 +81,19 @@ class Board(Blimp.Cog):
                 "age": age,
             },
         )
+
+        emoji_fmt = emoji
+        if isinstance(emoji, int):
+            emoji_fmt = f"[Custom Emoji](https://cdn.discordapp.com/emojis/{emoji}.png)"
+
+        logging_embed.add_field(
+            name="New",
+            value=f"Emoji: {emoji_fmt}\n"
+            f"Minimum Reacts: {min_reacts}\n"
+            f"Limit to new posts: {post_age_limit}",
+        )
+
+        await ctx.bot.post_log(channel.guild, embed=logging_embed)
 
         await ctx.reply(f"*Overwrote board configuration for {channel.mention}.*")
 
@@ -80,6 +117,10 @@ class Board(Blimp.Cog):
                 color=ctx.Color.I_GUESS,
             )
             return
+
+        await ctx.bot.post_log(
+            channel.guild, f"{ctx.author} deleted board {channel.mention}."
+        )
 
         await ctx.reply(f"*Deleted board configuration for {channel.mention}.*")
 
