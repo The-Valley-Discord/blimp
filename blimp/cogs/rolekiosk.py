@@ -108,7 +108,7 @@ class RoleKiosk(Blimp.Cog):
                 name="Old",
                 value="\n".join(
                     [
-                        f"{d[0]} {msg.guild.get_role(d[1]).mention}"
+                        f"{ctx.bot.get_emoji(d[0]) or d[0]} {msg.guild.get_role(d[1]).mention}"
                         for d in json.loads(old["data"])
                     ]
                 ),
@@ -117,7 +117,10 @@ class RoleKiosk(Blimp.Cog):
         log_embed.add_field(
             name="New",
             value="\n".join(
-                [f"{d[0]} {msg.guild.get_role(d[1]).mention}" for d in result]
+                [
+                    f"{ctx.bot.get_emoji(d[0]) or d[0]} {msg.guild.get_role(d[1]).mention}"
+                    for d in result
+                ]
             ),
         )
 

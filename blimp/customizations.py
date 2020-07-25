@@ -211,7 +211,7 @@ class Blimp(commands.Bot):
     async def post_log(self, guild: discord.Guild, *args, **kwargs):
         "Post a log entry to a guild, usage same as ctx.reply"
         configuration = self.database.execute(
-            "SELECT * FROM logging_configuration WHERE guild_oid=guild_oid",
+            "SELECT * FROM logging_configuration WHERE guild_oid=:guild_oid",
             {"guild_oid": self.objects.by_data(g=guild.id)},
         ).fetchone()
         if not configuration:

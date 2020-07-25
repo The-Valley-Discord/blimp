@@ -58,15 +58,10 @@ class Board(Blimp.Cog):
         ).fetchone()
         if old:
             data = json.loads(old["data"])
-            emoji_fmt = data[0]
-            if isinstance(data[0], int):
-                emoji_fmt = (
-                    f"[Custom Emoji](https://cdn.discordapp.com/emojis/{data[0]}.png)"
-                )
 
             logging_embed.add_field(
                 name="Old",
-                value=f"Emoji: {emoji_fmt}\n"
+                value=f"Emoji: {ctx.bot.get_emoji(data[0]) or data[0]}\n"
                 f"Minimum Reacts: {data[1]}\n"
                 f"Limit to new posts: {old['post_age_limit'] is not None}",
             )
@@ -82,13 +77,9 @@ class Board(Blimp.Cog):
             },
         )
 
-        emoji_fmt = emoji
-        if isinstance(emoji, int):
-            emoji_fmt = f"[Custom Emoji](https://cdn.discordapp.com/emojis/{emoji}.png)"
-
         logging_embed.add_field(
             name="New",
-            value=f"Emoji: {emoji_fmt}\n"
+            value=f"Emoji: {ctx.bot.get_emoji(emoji) or emoji}\n"
             f"Minimum Reacts: {min_reacts}\n"
             f"Limit to new posts: {post_age_limit}",
         )
