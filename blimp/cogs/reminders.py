@@ -39,6 +39,12 @@ class Reminders(Blimp.Cog):
                     "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
                 )
 
+            title = entry["text"]
+            extratext = ""
+            if len(title) > 255:
+                extratext = "…" + title[255:]
+                title = title[:255] + "…"
+
             timestamp = (
                 discord.utils.snowflake_time(invoke_msg[1])
                 .replace(microsecond=0, tzinfo=timezone.utc)
@@ -47,12 +53,10 @@ class Reminders(Blimp.Cog):
             await channel.send(
                 self.bot.get_user(entry["user_id"]).mention,
                 embed=discord.Embed(
-                    description=f"*Reminder:* {entry['text']}",
-                ).add_field(
-                    name="Context",
-                    value=f"{await self.bot.represent_object({'m':invoke_msg})} "
-                    f"from {timestamp} UTC",
-                ),
+                    title=title,
+                    description=extratext
+                    + f"\n\n**Context:** {await self.bot.represent_object({'m':invoke_msg})}",
+                ).set_footer(text=f"Reminder from {timestamp} UTC"),
             )
 
     @commands.group()
