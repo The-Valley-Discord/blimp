@@ -10,7 +10,7 @@ from .alias import MaybeAliasedTextChannel
 
 
 class Board(Blimp.Cog):
-    """*Putting up monuments to all your sins.*
+    """*Building monuments to all your sins.*
     A Board is a channel that gets any messages that get enough of certain
     reactions reposted into it. Also known as "starboard" on other, merely
     land-bound, bots."""

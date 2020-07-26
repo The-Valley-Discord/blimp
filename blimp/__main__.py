@@ -61,7 +61,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
         embed.description = (
             f"This is the *[BLIMP]({ctx.bot.config['info']['web']}) "
             "Levitating Intercommunication Management Programme*, a management "
-            f"bot for Discord.\nFor detailed help, use `{signature(_help)}`"
+            f"bot for Discord.\nFor detailed help, use `{signature(_help)}` "
             "with individual commands or any of the larger features "
             "listed below.\nThere's also an [online manual]"
             f"({ctx.bot.config['info']['manual']}) and, of course, the [source "
