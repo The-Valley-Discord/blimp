@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import re
 from typing import Union
 
 import discord
@@ -44,6 +45,13 @@ class Reminders(Blimp.Cog):
             if len(title) > 255:
                 extratext = "…" + title[255:]
                 title = title[:255] + "…"
+
+            # mentions/links don't work in the embed title
+            if re.search(r"<(?:@!?|#|@&)\d{10,}>", entry["text"]) or re.search(
+                "https://discord(?:app)?.com/channels/", entry["text"]
+            ):
+                title = None
+                extratext = entry["text"]
 
             timestamp = (
                 discord.utils.snowflake_time(invoke_msg[1])
