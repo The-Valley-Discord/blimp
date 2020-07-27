@@ -33,11 +33,11 @@ class Aliasing(Blimp.Cog):
     async def make(
         self,
         ctx: Blimp.Context,
-        target: Union[discord.Message, discord.TextChannel],
+        target: Union[discord.Message, discord.TextChannel, discord.CategoryChannel],
         alias: str,
     ):
         """
-        Create an alias for a Discord object (messages, channels).
+        Create an alias for a Discord object (messages, channels, categories).
         Aliases must start with a single ', have no whitespace, and be unique.
         """
         if not ctx.privileged_modify(ctx.guild):
@@ -52,6 +52,8 @@ class Aliasing(Blimp.Cog):
             oid = ctx.objects.make_object(m=[target.channel.id, target.id])
         elif target.__class__ == discord.TextChannel:
             oid = ctx.objects.make_object(tc=target.id)
+        elif target.__class__ == discord.CategoryChannel:
+            oid = ctx.objects.make_object(cc=target.id)
         else:
             raise ValueError("Bad object")
 
@@ -175,3 +177,24 @@ class MaybeAliasedTextChannel(discord.TextChannel):
             )
 
         return await commands.TextChannelConverter().convert(ctx, str(data["tc"]))
+
+
+class MaybeAliasedCategoryChannel(discord.CategoryChannel):
+    """An alias-aware converter for CategoryChannels."""
+
+    @classmethod
+    async def convert(cls, ctx: Blimp.Context, argument: str):
+        """
+        Convert an alias to a channel or fall back to the CategoryChannel converter.
+        """
+        if not ctx.guild or not len(argument) > 1 or not argument[0] == "'":
+            return await commands.CategoryChannelConverter().convert(ctx, argument)
+
+        oid, data = ctx.objects.by_alias(ctx.guild.id, argument)
+        if not oid:
+            raise commands.BadArgument(f"Unknown alias {argument}.")
+
+        if not data.get("cc"):
+            raise commands.BadArgument(f"Alias {argument} doesn't refer to a category.")
+
+        return await commands.CategoryChannelConverter().convert(ctx, str(data["cc"]))

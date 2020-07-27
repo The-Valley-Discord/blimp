@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 
 from customizations import Blimp, ParseableTimedelta
+from .alias import MaybeAliasedCategoryChannel
 
 
 class Tools(Blimp.Cog):
@@ -39,7 +40,7 @@ class Tools(Blimp.Cog):
     async def stalechannels(
         self,
         ctx: Blimp.Context,
-        category: discord.CategoryChannel,
+        category: MaybeAliasedCategoryChannel,
         duration: ParseableTimedelta = ParseableTimedelta(days=2),
     ):
         "List channels in a category that have been stale for a certain duration."

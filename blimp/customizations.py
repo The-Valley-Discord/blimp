@@ -204,7 +204,13 @@ class Blimp(commands.Bot):
                 channel = self.get_channel(data["tc"])
                 return channel.mention
             except:  # pylint: disable=bare-except
-                return "[Failed to link channel]"
+                return "[failed to link channel]"
+        if "cc" in data:
+            try:
+                channel = self.get_channel(data["cc"])
+                return f"Category {channel.name}"
+            except:  # pylint: disable=bare-except
+                return "[failed to link category]"
 
         raise ValueError(f"can't link to {data.keys()}")
 
