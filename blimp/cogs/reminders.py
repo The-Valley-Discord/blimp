@@ -94,7 +94,9 @@ class Reminders(Blimp.Cog):
             invoke_msg = ctx.objects.by_oid(rem["message_oid"])
             invoke_link = await self.bot.represent_object(invoke_msg)
             timestamp = datetime.fromisoformat(rem["due"]).replace(tzinfo=None)
-            rows.append(f"`{rem['id']}` {rem['text']} ({timestamp} UTC, {invoke_link})")
+            delta = timestamp - ctx.message.created_at
+            delta = delta - timedelta(microseconds=delta.microseconds)
+            rows.append(f"#{rem['id']} **{delta} ({invoke_link})**\n{rem['text']}")
 
         await ctx.reply("\n".join(rows))
 

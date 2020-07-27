@@ -61,5 +61,8 @@ class Tools(Blimp.Cog):
                 channels.append((channel, delta))
 
         await ctx.reply(
-            "\n".join([f"{channel.mention} {delta} ago" for channel, delta in channels])
+            "\n".join(
+                [f"{channel.mention} {delta} ago" for channel, delta in channels]
+            ),
+            subtitle=f"Channels in {category.name} that haven't been used in {duration}",
         )
