@@ -1,8 +1,9 @@
 import asyncio
 
+import discord
 from discord.ext import commands
 
-from customizations import Blimp
+from customizations import Blimp, ParseableTimedelta
 
 
 class Tools(Blimp.Cog):
@@ -33,3 +34,31 @@ class Tools(Blimp.Cog):
         )
         await asyncio.sleep(5.0)
         await info.delete()
+
+    @commands.command()
+    async def stalechannels(
+        self,
+        ctx: Blimp.Context,
+        category: discord.CategoryChannel,
+        duration: ParseableTimedelta = ParseableTimedelta(days=2),
+    ):
+        "List channels in a category that have been stale for a certain duration."
+        channels = []
+        for channel in category.channels:
+            if (
+                not isinstance(channel, discord.TextChannel)
+                or not channel.last_message_id
+            ):
+                continue
+
+            timestamp = discord.utils.snowflake_time(channel.last_message_id)
+            delta = ctx.message.created_at - timestamp
+
+            # chop off ms
+            delta = delta - ParseableTimedelta(microseconds=delta.microseconds)
+            if delta > duration:
+                channels.append((channel, delta))
+
+        await ctx.reply(
+            "\n".join([f"{channel.mention} {delta} ago" for channel, delta in channels])
+        )
