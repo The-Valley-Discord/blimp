@@ -65,7 +65,7 @@ class Blimp(commands.Bot):
                 if not subtitle:
                     subtitle = discord.Embed.Empty
 
-                lines = msg.split("\n")
+                lines = str(msg).split("\n")
                 buf = ""
                 for line in lines:
                     if len(buf + "\n" + line) > 2048:

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import random
+import uuid
 
 import discord
 from discord.ext import commands
@@ -37,3 +38,17 @@ class Malarkey(Blimp.Cog):
                 f"Outbound: {out_delta/timedelta(milliseconds=1)}ms"
             )
         )
+
+    @commands.command()
+    async def givemeafreegenderneutralname(self, ctx: Blimp.Context):
+        "Yes."
+
+        await ctx.reply(
+            f"{ctx.author} is now known as {str(uuid.uuid4()).replace('-', '')}"
+        )
+
+    @commands.command()
+    async def choose(self, ctx: Blimp.Context, *options):
+        "Choose a random option of those provided"
+
+        await ctx.reply(f"Hmmm… I choose {random.choice(options)}!")

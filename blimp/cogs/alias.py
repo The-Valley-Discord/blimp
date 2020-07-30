@@ -63,7 +63,7 @@ class Aliasing(Blimp.Cog):
                 {"gid": ctx.guild.id, "alias": alias, "oid": oid},
             )
         except sqlite3.DatabaseError:
-            ctx.database.excute("ABORT;")
+            ctx.database.execute("ABORT;")
             await ctx.reply(
                 "*that word seems common*\n"
                 "*for it's an alias.*\n"

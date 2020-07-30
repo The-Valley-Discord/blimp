@@ -66,3 +66,11 @@ class Tools(Blimp.Cog):
             ),
             subtitle=f"Channels in {category.name} that haven't been used in {duration}",
         )
+
+    @commands.command()
+    @commands.is_owner()
+    async def eval(self, ctx: Blimp.Context, *, code: str):
+        "Evaluate an expression as a lambda."
+        the_letter_after_kappa = eval(code)  # pylint: disable=eval-used
+        await the_letter_after_kappa(ctx)
+        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
