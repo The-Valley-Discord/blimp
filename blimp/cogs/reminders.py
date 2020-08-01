@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import re
-from typing import Union
+from typing import Union, Optional
 
 import discord
 from discord.ext import commands, tasks
@@ -131,7 +131,7 @@ class Reminders(Blimp.Cog):
         ctx: Blimp.Context,
         when: Union[ParseableDatetime, ParseableTimedelta],
         *,
-        text: str,
+        text: Optional[str],
     ):
         """Add a timed reminder for yourself.
 
@@ -147,6 +147,9 @@ class Reminders(Blimp.Cog):
                 ctx.message.created_at.replace(microsecond=0, tzinfo=timezone.utc)
                 + when
             )
+
+        if not text:
+            text = "[no reminder text provided]"
 
         if due < datetime.now(timezone.utc):
             await ctx.reply(

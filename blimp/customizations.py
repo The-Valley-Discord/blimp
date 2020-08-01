@@ -188,11 +188,13 @@ class Blimp(commands.Bot):
             try:
                 channel = self.get_channel(data["m"][0])
                 guild = "@me"
-                if channel.guild:
+                name = "DMs"
+                if not isinstance(channel, discord.DMChannel):
                     guild = channel.guild.id
+                    name = "#" + channel.name
 
                 return (
-                    f"[Message in #{channel.name}]("
+                    f"[Message in {name}]("
                     f"https://discord.com/channels/{guild}/{data['m'][0]}/{data['m'][1]}"
                     ")"
                 )
