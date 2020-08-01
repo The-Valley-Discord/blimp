@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 import random
-import uuid
 
 import discord
 from discord.ext import commands
 
 from customizations import Blimp
+from eff_large_wordlist import WORDS
 
 
 class Malarkey(Blimp.Cog):
@@ -41,11 +41,14 @@ class Malarkey(Blimp.Cog):
 
     @commands.command()
     async def givemeafreegenderneutralname(self, ctx: Blimp.Context):
-        "Yes."
+        """
+        Generates gender-neutral names (or codenames, if you're feeling secretive),
+        words courtesy of the Electronic Frontier Foundation (CC-BY 3.0)
+        """
+        amount = random.randint(2, 3)
+        words = random.choices(WORDS, k=amount)
 
-        await ctx.reply(
-            f"{ctx.author} is now known as {str(uuid.uuid4()).replace('-', '')}"
-        )
+        await ctx.reply(f"{ctx.author.mention} is now known as **{' '.join(words)}**.")
 
     @commands.command()
     async def choose(self, ctx: Blimp.Context, *options):
