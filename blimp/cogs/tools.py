@@ -3,7 +3,7 @@ import asyncio
 import discord
 from discord.ext import commands
 
-from customizations import Blimp, ParseableTimedelta
+from ..customizations import Blimp, ParseableTimedelta
 from .alias import MaybeAliasedCategoryChannel
 
 

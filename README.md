@@ -4,11 +4,20 @@
 A Discord misc. tooling Bot, spiritual successor of Bampersand.
 To run, you need [Nix](https://nixos.org/). BLIMP is written in Python.
 
+Running in **development**:
 ```
 $ cd blimp
 $ nix-shell
-[nix-shell:/blimp]$ python blimp
+[nix-shell:/blimp]$ python -m blimp
 ```
+
+Building the package for **production**:
+```
+$ cd blimp
+$ nix build
+$ ./result/bin/blimp
+```
+
 
 ---
 

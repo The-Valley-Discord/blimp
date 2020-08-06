@@ -4,8 +4,8 @@ import random
 import discord
 from discord.ext import commands
 
-from customizations import Blimp
-from eff_large_wordlist import WORDS
+from ..customizations import Blimp
+from ..eff_large_wordlist import WORDS
 
 
 class Malarkey(Blimp.Cog):

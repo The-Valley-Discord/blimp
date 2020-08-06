@@ -9,8 +9,9 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from customizations import Blimp
-import cogs
+from .customizations import Blimp
+from . import cogs
+
 
 config = ConfigParser()
 config.read("blimp.cfg")
@@ -147,4 +148,9 @@ async def on_command_error(ctx, error):
         )
 
 
-bot.run(config["discord"]["token"])
+def main():
+    bot.run(config["discord"]["token"])
+
+
+if __name__ == "__main__":
+    main()

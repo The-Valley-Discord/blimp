@@ -4,7 +4,7 @@ from string import Template
 import discord
 from discord.ext import commands
 
-from customizations import Blimp
+from ..customizations import Blimp
 from .alias import MaybeAliasedTextChannel
 
 

@@ -5,7 +5,7 @@ from typing import Union, Optional
 import discord
 from discord.ext import commands, tasks
 
-from customizations import Blimp, ParseableDatetime, ParseableTimedelta
+from ..customizations import Blimp, ParseableDatetime, ParseableTimedelta
 
 
 class Reminders(Blimp.Cog):
@@ -37,7 +37,6 @@ class Reminders(Blimp.Cog):
                 self.log.warn(
                     f"Failed to deliver reminder {entry['id']}, origin {self.bot.represent_object(invoke_msg)}"
                 )
-                pass
             finally:
                 self.bot.database.execute(
                     "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},

@@ -10,7 +10,7 @@ import discord
 from discord import Activity, ActivityType
 from discord.ext import commands
 
-from objects import BlimpObjects
+from .objects import BlimpObjects
 
 
 class Blimp(commands.Bot):

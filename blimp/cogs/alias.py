@@ -4,7 +4,7 @@ from typing import Union
 import discord
 from discord.ext import commands
 
-from customizations import Blimp
+from ..customizations import Blimp
 
 
 class Aliasing(Blimp.Cog):

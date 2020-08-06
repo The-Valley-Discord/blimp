@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import UserInputError
 
-from customizations import Blimp
+from ..customizations import Blimp
 from .alias import MaybeAliasedMessage
 
 
