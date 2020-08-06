@@ -74,3 +74,10 @@ class Tools(Blimp.Cog):
         the_letter_after_kappa = eval(code)  # pylint: disable=eval-used
         await the_letter_after_kappa(ctx)
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+
+    @commands.command()
+    async def pleasetellmehowmanypeoplehave(
+        self, ctx: Blimp.Context, role: discord.Role
+    ):
+        members = [m for m in ctx.guild.members if role in m.roles]
+        await ctx.reply(f"{len(members)} members have {role.mention}.")

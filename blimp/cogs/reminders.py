@@ -34,6 +34,9 @@ class Reminders(Blimp.Cog):
                 channel = self.bot.get_user(entry["user_id"])
                 channel = self.bot.get_channel(invoke_msg[0])
             except:  # pylint: disable=bare-except
+                self.log.warn(
+                    f"Failed to deliver reminder {entry['id']}, origin {self.bot.represent_object(invoke_msg)}"
+                )
                 pass
             finally:
                 self.bot.database.execute(
