@@ -1,15 +1,23 @@
 [discord]
+# The suffix for commands the bot listens to, i.e. ping! triggers a response, ping? does not.
 suffix = !
-token = not telling you
+# The token for the bot; get one at https://discord.com/developers/applications
+token = keepmesecret
 
 [log]
+# You ... probably don't need to change any of this
 level = INFO
 suppress = discord.gateway,discord.client
 
 [database]
+# The path where the database is stored. Default should be ok.
 path = ./blimp.db
 
 [info]
+# Your website, if applicable.
 web = https://dingenskirchen.systems/blimp
+# Your manual, if applicable.
 manual = https://dingenskirchen.systems/blimp/manual
+# The source code. If you run a version of BLIMP with modified code, you *are required to* to publish your changes.
+# The easiest way to do that is to point this to a public repository with your version.
 source = https://github.com/The-Valley-Discord/blimp
