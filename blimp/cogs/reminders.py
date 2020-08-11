@@ -35,7 +35,8 @@ class Reminders(Blimp.Cog):
                 channel = self.bot.get_channel(invoke_msg[0])
             except:  # pylint: disable=bare-except
                 self.log.warn(
-                    f"Failed to deliver reminder {entry['id']}, origin {self.bot.represent_object(invoke_msg)}"
+                    f"Failed to deliver reminder {entry['id']}, "
+                    f"origin {self.bot.represent_object(invoke_msg)}"
                 )
             finally:
                 self.bot.database.execute(
@@ -145,6 +146,9 @@ class Reminders(Blimp.Cog):
         if isinstance(when, datetime):
             due = when.replace(microsecond=0)
         elif isinstance(when, timedelta):
+            if when == timedelta():
+                raise commands.BadArgument("Time difference may not be zero.")
+
             due = (
                 ctx.message.created_at.replace(microsecond=0, tzinfo=timezone.utc)
                 + when

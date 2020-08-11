@@ -98,7 +98,7 @@ class Blimp(commands.Bot):
             """
             Check if the context's user can do privileged actions on the subject.
             """
-            if self.author.id == 344166495317655562:
+            if self.bot.owner_id == self.author.id:
                 return True
 
             kind = subject.__class__
@@ -213,6 +213,12 @@ class Blimp(commands.Bot):
                 return f"Category {channel.name}"
             except:  # pylint: disable=bare-except
                 return "[failed to link category]"
+        if "u" in data:
+            try:
+                user = self.get_user(data["u"])
+                return user.mention
+            except:  # pylint: disable=bare-except
+                return "[failed to link user]"
 
         raise ValueError(f"can't link to {data.keys()}")
 
@@ -269,8 +275,5 @@ class ParseableTimedelta(timedelta):
         secsm = re.search(r"(\d+) ?s((econds?)?|(ecs?)?)?", argument)
         if secsm:
             delta += cls(seconds=int(secsm[1]))
-
-        if delta == timedelta():
-            raise commands.BadArgument("Time difference may not be zero.")
 
         return delta

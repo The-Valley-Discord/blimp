@@ -79,5 +79,6 @@ class Tools(Blimp.Cog):
     async def pleasetellmehowmanypeoplehave(
         self, ctx: Blimp.Context, role: discord.Role
     ):
+        "Show how many members have a certain role."
         members = [m for m in ctx.guild.members if role in m.roles]
         await ctx.reply(f"{len(members)} members have {role.mention}.")

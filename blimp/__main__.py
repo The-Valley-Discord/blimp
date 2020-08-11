@@ -32,10 +32,10 @@ for cog in [
     cogs.Aliasing,
     cogs.Welcome,
     cogs.Board,
-    cogs.Reminders,
     cogs.Malarkey,
     cogs.Tools,
     cogs.Logging,
+    cogs.Slowmode,
 ]:
     bot.add_cog(cog(bot))
 
@@ -44,6 +44,8 @@ for cog in [
 async def on_ready():
     """Hello world."""
     bot.log.info(f"Logged in as {bot.user}")
+    bot.add_cog(cogs.Reminders(bot))
+    bot.owner_id = (await bot.application_info()).owner.id
 
 
 @bot.command(name="help")
