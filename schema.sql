@@ -55,3 +55,19 @@ CREATE TABLE IF NOT EXISTS logging_configuration (
     FOREIGN KEY (guild_oid) REFERENCES objects(oid),
     FOREIGN KEY (channel_oid) REFERENCES objects(oid)
 );
+
+CREATE TABLE IF NOT EXISTS slowmode_configuration (
+    channel_oid INTEGER PRIMARY KEY,
+    secs UNSIGNED INTEGER NOT NULL,
+    ignore_privileged_users BOOL NOT NULL,
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid)
+);
+
+CREATE TABLE IF NOT EXISTS slowmode_entries (
+    channel_oid INTEGER NOT NULL,
+    user_oid INTEGER NOT NULL,
+    timestamp DATE NOT NULL,
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid),
+    FOREIGN KEY (user_oid) REFERENCES objects(oid),
+    PRIMARY KEY (channel_oid, user_oid)
+);
