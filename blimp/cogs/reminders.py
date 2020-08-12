@@ -64,7 +64,7 @@ class Reminders(Blimp.Cog):
             except:  # pylint: disable=bare-except
                 self.log.warn(
                     f"Failed to deliver reminder {entry['id']}, "
-                    f"origin {await self.bot.represent_object(invoke_msg)}"
+                    f"origin {await self.bot.represent_object({'m':invoke_msg})}"
                 )
                 raise
             finally:
