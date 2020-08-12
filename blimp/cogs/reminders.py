@@ -31,44 +31,46 @@ class Reminders(Blimp.Cog):
             channel = None
 
             try:
-                channel = self.bot.get_user(entry["user_id"])
                 channel = self.bot.get_channel(invoke_msg[0])
+                if not channel:
+                    channel = self.bot.get_user(entry["user_id"])
+
+                title = entry["text"]
+                extratext = ""
+                if len(title) > 255:
+                    extratext = "…" + title[255:]
+                    title = title[:255] + "…"
+
+                # mentions/links don't work in the embed title
+                if re.search(r"<(?:@!?|#|@&)\d{10,}>", entry["text"]) or re.search(
+                    "https://discord(?:app)?.com/channels/", entry["text"]
+                ):
+                    title = None
+                    extratext = entry["text"]
+
+                timestamp = (
+                    discord.utils.snowflake_time(invoke_msg[1])
+                    .replace(microsecond=0, tzinfo=timezone.utc)
+                    .replace(tzinfo=None)
+                )
+                await channel.send(
+                    self.bot.get_user(entry["user_id"]).mention,
+                    embed=discord.Embed(
+                        title=title,
+                        description=extratext
+                        + f"\n\n**Context:** {await self.bot.represent_object({'m':invoke_msg})}",
+                    ).set_footer(text=f"Reminder from {timestamp} UTC"),
+                )
             except:  # pylint: disable=bare-except
                 self.log.warn(
                     f"Failed to deliver reminder {entry['id']}, "
-                    f"origin {self.bot.represent_object(invoke_msg)}"
+                    f"origin {await self.bot.represent_object(invoke_msg)}"
                 )
+                raise
             finally:
                 self.bot.database.execute(
                     "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
                 )
-
-            title = entry["text"]
-            extratext = ""
-            if len(title) > 255:
-                extratext = "…" + title[255:]
-                title = title[:255] + "…"
-
-            # mentions/links don't work in the embed title
-            if re.search(r"<(?:@!?|#|@&)\d{10,}>", entry["text"]) or re.search(
-                "https://discord(?:app)?.com/channels/", entry["text"]
-            ):
-                title = None
-                extratext = entry["text"]
-
-            timestamp = (
-                discord.utils.snowflake_time(invoke_msg[1])
-                .replace(microsecond=0, tzinfo=timezone.utc)
-                .replace(tzinfo=None)
-            )
-            await channel.send(
-                self.bot.get_user(entry["user_id"]).mention,
-                embed=discord.Embed(
-                    title=title,
-                    description=extratext
-                    + f"\n\n**Context:** {await self.bot.represent_object({'m':invoke_msg})}",
-                ).set_footer(text=f"Reminder from {timestamp} UTC"),
-            )
 
     @commands.group()
     async def reminders(self, ctx: Blimp.Context):
