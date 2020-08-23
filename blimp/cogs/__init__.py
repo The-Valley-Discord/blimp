@@ -10,3 +10,4 @@ from .welcome import Welcome
 from .tools import Tools
 from .logging import Logging
 from .slowmode import Slowmode
+from .moderation import Moderation

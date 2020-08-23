@@ -71,3 +71,17 @@ CREATE TABLE IF NOT EXISTS slowmode_entries (
     FOREIGN KEY (user_oid) REFERENCES objects(oid),
     PRIMARY KEY (channel_oid, user_oid)
 );
+
+CREATE TABLE IF NOT EXISTS channelban_entries (
+    channel_oid INTEGER NOT NULL,
+    guild_oid INTEGER NOT NULL,
+    user_oid INTEGER NOT NULL,
+    issuer_oid INTEGER NOT NULL,
+    issued_at DATE DEFAULT CURRENT_TIMESTAMP,
+    reason STRING NOT NULL,
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid),
+    FOREIGN KEY (guild_oid) REFERENCES objects(oid),
+    FOREIGN KEY (user_oid) REFERENCES objects(oid),
+    FOREIGN KEY (issuer_oid) REFERENCES objects(oid),
+    PRIMARY KEY (channel_oid, user_oid)
+);

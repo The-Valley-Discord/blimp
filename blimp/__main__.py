@@ -36,6 +36,7 @@ for cog in [
     cogs.Tools,
     cogs.Logging,
     cogs.Slowmode,
+    cogs.Moderation,
 ]:
     bot.add_cog(cog(bot))
 
