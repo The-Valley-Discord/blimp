@@ -1,10 +1,11 @@
 import asyncio
+from typing import Optional
 
 import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, ParseableTimedelta
-from .alias import MaybeAliasedCategoryChannel
+from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 
 
 class Tools(Blimp.Cog):
@@ -82,3 +83,32 @@ class Tools(Blimp.Cog):
         "Show how many members have a certain role."
         members = [m for m in ctx.guild.members if role in m.roles]
         await ctx.reply(f"{len(members)} members have {role.mention}.")
+
+    @commands.command()
+    async def setchanneltopic(
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
+        *,
+        text: str,
+    ):
+        "Set the description of a channel."
+        if not channel:
+            channel = ctx.channel
+
+        if not ctx.privileged_modify(channel):
+            return
+
+        log_embed = (
+            discord.Embed(
+                description=f"{ctx.author} updated the topic of {channel.mention}.",
+                color=ctx.Color.I_GUESS,
+            )
+            .add_field(name="Old", value=channel.topic)
+            .add_field(name="New", value=text)
+        )
+
+        await channel.edit(topic=text, reason=str(ctx.author))
+
+        await ctx.bot.post_log(channel.guild, embed=log_embed)
+        await ctx.reply(f"Updated channel topic for {channel.mention}.")

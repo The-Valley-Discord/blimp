@@ -49,7 +49,9 @@ class Moderation(Blimp.Cog):
             },
         )
 
-        await channel.set_permissions(member, send_messages=False)
+        await channel.set_permissions(
+            member, send_messages=False, reason=str(ctx.author)
+        )
 
         await ctx.bot.post_log(
             channel.guild,
