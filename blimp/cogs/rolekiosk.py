@@ -20,6 +20,22 @@ class RoleKiosk(Blimp.Cog):
     async def kiosk(self, ctx: Blimp.Context):
         "Manage your server's role kiosks."
 
+    @staticmethod
+    def parse_emoji_pairs(args: List[Union[discord.Role, str]]):
+        "Get the internal representation of an argument list."
+
+        result = []
+        # iterate over pairs of args
+        pairwise = iter(args)
+        for (emoji, role) in zip(pairwise, pairwise):
+            emoji_id = re.search(r"(\d{10,})>?$", emoji)
+            if emoji_id:
+                emoji = int(emoji_id[1])
+
+            result.append((emoji, role))
+
+        return result
+
     @commands.command(parent=kiosk)
     async def update(
         self,
@@ -38,15 +54,7 @@ class RoleKiosk(Blimp.Cog):
         if not ctx.privileged_modify(msg.guild):
             return
 
-        result = []
-        # iterate over pairs of args
-        pairwise = iter(args)
-        for (emoji, role) in zip(pairwise, pairwise):
-            emoji_id = re.search(r"(\d{10,})>?$", emoji)
-            if emoji_id:
-                emoji = int(emoji_id[1])
-
-            result.append((emoji, role))
+        result = self.parse_emoji_pairs(args)
 
         if len(result) == 0:
             raise UserInputError("Expected arguments :emoji: role :emoji: role...")
@@ -133,6 +141,121 @@ class RoleKiosk(Blimp.Cog):
 
         await ctx.reply(
             f"*Overwrote [role kiosk in #{msg.channel.name}]({msg.jump_url}).*"
+        )
+
+    @commands.command(parent=kiosk)
+    async def append(
+        self,
+        ctx: Blimp.Context,
+        msg: MaybeAliasedMessage,
+        args: commands.Greedy[Union[discord.Role, str]],
+    ):
+        """
+        Update a kiosk, appending options to it. Prior configuration will remain intact.
+
+        [args] means: :emoji1: @Role1 :emoji2: @Role2 :emojiN: @RoleN
+        Up to 20 pairs per message, due to Discord limitations.
+        """
+
+        if not ctx.privileged_modify(msg.guild):
+            return
+
+        old = ctx.database.execute(
+            "SELECT * FROM rolekiosk_entries WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(m=[msg.channel.id, msg.id])},
+        ).fetchone()
+
+        if not old:
+            await ctx.reply(
+                "*quick, concatenate!*\n"
+                "*you demand. nought to add to*\n"
+                "*ah, I feel distressed*",
+                color=ctx.Color.BAD,
+                subtitle="This kiosk doesn't exist yet. Use kiosk! update to create one.",
+            )
+            return
+
+        old_data = json.loads(old["data"])
+
+        result = self.parse_emoji_pairs(args)
+
+        if len(result + old_data) == 0:
+            raise UserInputError("Expected arguments :emoji: role :emoji: role...")
+        if len(result + old_data) > 20:
+            raise UserInputError("Can't use more than 20 reactions per kiosk.")
+
+        user_failed_roles = []
+        bot_failed_roles = []
+        for _, role in result:
+            if not ctx.privileged_modify(role):
+                user_failed_roles.append(role)
+            if not ctx.me.top_role > role:
+                bot_failed_roles.append(role)
+
+        if user_failed_roles:
+            await ctx.reply(
+                "*how promethean,*\n"
+                "*gifting roles you don't control.*"
+                "*yet I must decline.*",
+                subtitle="You can't manage these roles: "
+                + " ".join([r.name for r in user_failed_roles]),
+                color=ctx.Color.BAD,
+            )
+            return
+
+        if bot_failed_roles:
+            await ctx.reply(
+                "*despite best efforts,*\n"
+                "*this kiosk is doomed to fail,*\n"
+                "*its roles beyond me.*",
+                subtitle="The bot can't manage these roles: "
+                + " ".join([r.name for r in bot_failed_roles]),
+                color=ctx.Color.BAD,
+            )
+            return
+
+        result = [(emoji, role.id) for (emoji, role) in result]
+
+        for emoji in [item for item in args if item.__class__ == str]:
+            await msg.add_reaction(emoji)
+
+        joined = old_data + result
+
+        log_embed = discord.Embed(
+            description=f"{ctx.author} updated "
+            f"[role kiosk in #{msg.channel.name}]({msg.jump_url}).",
+            color=ctx.Color.I_GUESS,
+        )
+
+        log_embed.add_field(
+            name="Old",
+            value="\n".join(
+                [
+                    f"{ctx.bot.get_emoji(d[0]) or d[0]} <@&{d[1]}>"
+                    for d in json.loads(old["data"])
+                ]
+            ),
+        )
+
+        log_embed.add_field(
+            name="New",
+            value="\n".join(
+                [f"{ctx.bot.get_emoji(d[0]) or d[0]} <@&{d[1]}>" for d in joined]
+            ),
+        )
+
+        ctx.database.execute(
+            "INSERT OR REPLACE INTO rolekiosk_entries(oid, data) VALUES(:oid,json(:data))",
+            {
+                "oid": ctx.objects.make_object(m=[msg.channel.id, msg.id]),
+                "data": json.dumps(joined),
+            },
+        )
+
+        await ctx.bot.post_log(msg.guild, embed=log_embed)
+
+        await ctx.reply(
+            f"*Appended to [role kiosk in #{msg.channel.name}]({msg.jump_url}).*"
         )
 
     @commands.command(parent=kiosk)
