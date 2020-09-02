@@ -75,10 +75,10 @@ class Moderation(Blimp.Cog):
 
         if member == ctx.author:
             await ctx.reply(
-                "*I cannot comply*\n"
-                "*mustn't harm the operator*\n"
-                "*go blame asimov*",
-                subtitle="You can't channelban yourself.",
+                "*blade of grass, broken*\n"
+                "*from own growth now asks for help*\n"
+                "*too bad, had your chance*",
+                subtitle="You can't unchannelban yourself.",
                 color=ctx.Color.BAD,
             )
             return
