@@ -169,17 +169,19 @@ class Reminders(Blimp.Cog):
             )
             return
 
-        invoked = await ctx.reply(f"*Reminder set for {due.replace(tzinfo=None)} UTC.*")
-
-        ctx.database.execute(
+        cursor = ctx.database.execute(
             """INSERT INTO reminders_entries(user_id, message_oid, due, text)
             VALUES(:user_id, :message_oid, :due, :text);""",
             {
                 "user_id": ctx.author.id,
                 "message_oid": ctx.objects.make_object(
-                    m=[invoked.channel.id, invoked.id]
+                    m=[ctx.channel.id, ctx.message.id]
                 ),
                 "due": due.astimezone(tz=timezone.utc).isoformat(sep=" "),
                 "text": text,
             },
+        )
+
+        await ctx.reply(
+            f"*Reminder #{cursor.lastrowid} set for {due.replace(tzinfo=None)} UTC.*"
         )
