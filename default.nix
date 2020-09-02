@@ -7,8 +7,17 @@ with import (builtins.fetchTarball {
 
 python3Packages.buildPythonPackage {
   pname = "blimp";
-  version = "0.0.1";
-  src = ./.;
+  version = "unstable";
+
+  doCheck = false;
+
+  src = lib.cleanSourceWith {
+    filter = name: type:
+      let baseName = baseNameOf (toString name);
+      in !(baseName == "blimp.cfg" || baseName == "blimp.db");
+    src = lib.cleanSource ./.;
+  };
+
   buildInputs = with python3Packages; [ black pylint ];
   propagatedBuildInputs = with python3Packages; [ discordpy ];
 }
