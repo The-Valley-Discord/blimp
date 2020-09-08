@@ -35,7 +35,7 @@ class Reminders(Blimp.Cog):
                 if not channel:
                     channel = self.bot.get_user(entry["user_id"])
 
-                title = entry["text"]
+                title = str(entry["text"])
                 extratext = ""
                 if len(title) > 255:
                     extratext = "…" + title[255:]
