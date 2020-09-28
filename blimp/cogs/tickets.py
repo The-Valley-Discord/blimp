@@ -1,183 +1,13 @@
 from datetime import timedelta
-import html
-import re
-from string import Template
 import tempfile
 from typing import Optional
 
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
 from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
-
-
-def shrink(string):
-    "Remove whitespace from a string"
-    return re.sub(r"\n\s*", "", string)
-
-
-class Transcript:
-    "Just a place to chuck all of the transcript related code so it can get collapsed in VSC"
-
-    @staticmethod
-    def fancify_content(content):
-        "Faithfully recreate discord's markup in HTML. absolutely disgusting"
-        content = html.escape(content)
-
-        def emojify(match):
-            return (
-                f"<img src='https://cdn.discordapp.com/emojis/{match[3]}"
-                + (".gif" if match[1] == "a" else ".png")
-                + f"' class='emoji' title='{match[2]}'>"
-            )
-
-        content = re.sub(r"&lt;(a?):(\w+):(\d+)&gt;", emojify, content)
-
-        content = re.sub(r"```(.+)```", r"<pre>\1</pre>", content, flags=re.DOTALL)
-        # advanced[tm] markdown processing
-        content = content.replace("\n", "<br>")
-        content = re.sub(r"\*\*([^\*]+)\*\*", r"<b>\1</b>", content)
-        content = re.sub(r"\*([^\*]+)\*", r"<i>\1</i>", content)
-        content = re.sub(r"~~([^~]+)~~", r"<del>\1</del>", content)
-        content = re.sub(r"`([^`]+)`", r"<code>\1</code>", content)
-        if content == "":
-            content = "<span class='no-content'>No content.</span>"
-        return content
-
-    TRANSCRIPT_HEADER = Template(
-        shrink(
-            """
-            <!doctype html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <title>#$channelname</title>
-                <style>
-                    body {
-                        background: #36393f;
-                        color: #dcddde;
-                        font-family: Roboto, sans-serif;
-                    }
-                    .message-container {
-                        margin: 1rem 0;
-                        display: grid;
-                        grid-template-columns: 3rem auto;
-                        grid-template-rows: 1.3rem auto;
-                        grid-column-gap: 1rem;
-                        border-left: 3px solid #36393f;
-                        padding-left: 5px;
-                        min-height: 2.6rem;
-                    }
-                    .message-container .metadata {
-                        grid-column: 2;
-                        grid-row: 1;
-                    }
-                    .message-container .metadata *, .message-container .content .no-content {
-                        color: #72767d;
-                        font-size: .8rem;
-                    }
-                    .message-container .metadata .author {
-                        font-size: 1rem;
-                        color: #dcddde;
-                        margin-right: .3rem;
-                        font-weight: bold;
-                    }
-                    .message-container .metadata .id-anchor {
-                        text-decoration: none;
-                    }
-                    .message-container .metadata .id-anchor:hover {
-                        text-decoration: underline;
-                    }
-                    .message-container img.avatar {
-                        grid-column: 1;
-                        width: 3rem;
-                        border-radius: 50%;
-                    }
-                    .message-container .content {
-                        max-width: 75ch;
-                        overflow-wrap: anywhere;
-                        line-height: 1.3rem;
-                        grid-column: 2;
-                    }
-                    .content a {
-                        color: #00b0f4;
-                    }
-                    .content pre, content code {
-                        font-size: .8rem;
-                        background: #2f3136;
-                        padding: .3rem;
-                        overflow-wrap: anywhere;
-                        font-family: monospace;
-                    }
-                    .content img.emoji {
-                        height: 1.3rem;
-                        vertical-align: middle;
-                    }
-                    .content img.emoji.emoji-big {
-                        height: 2.6rem;
-                    }
-                    .content img.attachment {
-                        display: block;
-                        max-width: 32em;
-                    }
-                </style>
-            </head>
-            <body>
-                <h3>$headline</h3>
-                <div id="messagelog">
-            """
-        )
-    )
-
-    TRANSCRIPT_ITEM = Template(
-        shrink(
-            """
-            <div class="message-container" id="$messageid">
-                <img class="avatar" src="$authoravatar">
-                <div class="metadata">
-                    <span class="author" title="$authortag">$authornick </span>
-                    <span class="timestamp">$timestamp </span>
-                    <a href="#$messageid" class="id-anchor">$messageid</a>
-                </div>
-                <div class="content">$content</div>
-            </div>
-            """
-        )
-    )
-
-    TRANSCRIPT_FOOTER = "</div></body></html>"
-
-    @classmethod
-    async def write_transcript(cls, file, channel):
-        "Write a transcript of the channel into file."
-        file.write(
-            cls.TRANSCRIPT_HEADER.substitute(
-                channelname=channel.name,
-                headline=f"#{channel.name} on {channel.guild.name}",
-            )
-        )
-        async for message in channel.history(limit=None, oldest_first=True):
-            clean_timestamp = message.created_at - timedelta(
-                microseconds=message.created_at.microsecond
-            )
-            file.write(
-                cls.TRANSCRIPT_ITEM.substitute(
-                    messageid=message.id,
-                    authortag=str(message.author),
-                    authornick=message.author.display_name,
-                    authoravatar=message.author.avatar_url,
-                    timestamp=clean_timestamp,
-                    content=cls.fancify_content(message.clean_content)
-                    + "\n".join(
-                        [
-                            f"<img src='{a.url}' class='attachment' title='{a.filename}'>"
-                            for a in message.attachments
-                        ]
-                    ),
-                )
-            )
-        file.write(cls.TRANSCRIPT_FOOTER)
+from ..customizations import Blimp
+from ..transcript import Transcript
 
 
 class Tickets(Blimp.Cog):
@@ -225,8 +55,11 @@ class Tickets(Blimp.Cog):
 
         ctx.database.execute(
             """INSERT OR REPLACE INTO
-        ticket_categories(category_oid, guild_oid, count, transcript_channel_oid, per_user_limit, can_creator_close)
-        VALUES(:category_oid, :guild_oid, :count, :transcript_channel_oid, :per_user_limit, :can_creator_close)""",
+            ticket_categories(category_oid, guild_oid, count, transcript_channel_oid,
+                per_user_limit, can_creator_close)
+
+            VALUES(:category_oid, :guild_oid, :count, :transcript_channel_oid, :per_user_limit,
+                :can_creator_close)""",
             {
                 "category_oid": ctx.objects.make_object(cc=category.id),
                 "guild_oid": ctx.objects.make_object(g=category.guild.id),
@@ -392,12 +225,33 @@ class Tickets(Blimp.Cog):
         initial_message = await ticket_channel.send(
             ctx.author.mention,
             embed=discord.Embed(
-                description="this is a ticket", color=ctx.Color.AUTOMATIC_BLUE
-            ),
+                title=f"Welcome to {actual_class['name']}-{ticket_category['count'] + 1}!\n",
+                description=(
+                    "Staff "
+                    + ("and you " if ticket_category["can_creator_close"] else "")
+                    + f"can delete this ticket using :x: or `ticket{ctx.bot.suffix} delete`\n"
+                    + "Add or remove participants using "
+                    + f"`ticket{ctx.bot.suffix} add` and `ticket{ctx.bot.suffix} remove`.\n"
+                ),
+                color=ctx.Color.AUTOMATIC_BLUE,
+            ).set_footer(text="BLIMP Tickets", icon_url=ctx.bot.user.avatar_url),
         )
         await initial_message.pin()
         await ticket_channel.purge(limit=1, check=lambda m: m.author == self.bot.user)
         await ticket_channel.send(actual_class["description"])
+        ctx.database.execute(
+            """INSERT INTO
+            trigger_entries(message_oid, emoji, command)
+            VALUES(:message_oid, :emoji, :command)""",
+            {
+                "message_oid": ctx.objects.make_object(
+                    m=[initial_message.channel.id, initial_message.id]
+                ),
+                "emoji": "\N{CROSS MARK}",
+                "command": f"ticket{self.bot.suffix} delete",
+            },
+        )
+        await initial_message.add_reaction("\N{CROSS MARK}")
 
     @commands.command(parent=ticket)
     async def delete(
@@ -430,12 +284,36 @@ class Tickets(Blimp.Cog):
         transcript_channel_obj = ctx.objects.by_oid(category["transcript_channel_oid"])
         transcript_channel = self.bot.get_channel(transcript_channel_obj["tc"])
 
+        created_timestamp = channel.created_at - timedelta(
+            microseconds=channel.created_at.microsecond
+        )
+        deleted_timestamp = ctx.message.created_at - timedelta(
+            microseconds=ctx.message.created_at.microsecond
+        )
+        archive_embed = (
+            discord.Embed(title=f"#{channel.name}", color=ctx.Color.I_GUESS,)
+            .add_field(
+                name="Created",
+                value=str(created_timestamp) + f"\n<@{ticket['creator_id']}>",
+            )
+            .add_field(
+                name="Deleted", value=str(deleted_timestamp) + "\n" + ctx.author.mention
+            )
+        )
+
         with tempfile.TemporaryFile(mode="r+") as temp:
-            await Transcript.write_transcript(temp, channel)
+            messages = await Transcript.write_transcript(temp, channel)
             temp.seek(0)
 
+            participants = set([message.author for message in messages])
+            archive_embed.add_field(
+                name="Participants",
+                value="\n".join(user.mention for user in participants),
+            )
+
             await transcript_channel.send(
-                None, file=discord.File(fp=temp, filename=f"{channel.name}.html")
+                embed=archive_embed,
+                file=discord.File(fp=temp, filename=f"{channel.name}.html"),
             )
 
         with ctx.database as trans:
@@ -446,6 +324,13 @@ class Tickets(Blimp.Cog):
             trans.execute(
                 "DELETE FROM ticket_entries WHERE channel_oid = :channel_oid",
                 {"channel_oid": ctx.objects.by_data(tc=channel.id)},
+            )
+            first_message = (
+                await channel.history(limit=1, oldest_first=True).flatten()
+            )[0]
+            trans.execute(
+                "DELETE FROM trigger_entries WHERE message_oid=:message_oid",
+                {"message_oid": ctx.objects.by_data(m=[channel.id, first_message.id])},
             )
 
             await channel.delete()
@@ -605,4 +490,3 @@ class Tickets(Blimp.Cog):
                 },
                 reason="added to ticket on rejoin",
             )
-

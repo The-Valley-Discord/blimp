@@ -127,6 +127,9 @@ class Trigger(Blimp.Cog):
         await self.bot.process_commands(message)
 
         message.id = actual_id
-        await message.remove_reaction(
-            payload.emoji, channel.guild.get_member(payload.user_id)
-        )
+        try:
+            await message.remove_reaction(
+                payload.emoji, channel.guild.get_member(payload.user_id)
+            )
+        except discord.errors.NotFound:
+            pass
