@@ -123,5 +123,14 @@ CREATE TABLE IF NOT EXISTS ticket_participants (
     user_id INTEGER NOT NULL,
 
     FOREIGN KEY (channel_oid) REFERENCES objects(oid),
-    PRIMARY KEY(channel_oid, user_id)
+    PRIMARY KEY (channel_oid, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS trigger_entries (
+    message_oid INTEGER NOT NULL,
+    emoji STRING NOT NULL,
+    command STRING NOT NULL,
+
+    FOREIGN KEY (message_oid) REFERENCES objects(oid),
+    PRIMARY KEY(message_oid, emoji)
 );

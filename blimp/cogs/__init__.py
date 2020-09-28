@@ -12,3 +12,4 @@ from .logging import Logging
 from .slowmode import Slowmode
 from .moderation import Moderation
 from .tickets import Tickets
+from .trigger import Trigger

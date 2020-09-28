@@ -38,6 +38,7 @@ for cog in [
     cogs.Slowmode,
     cogs.Moderation,
     cogs.Tickets,
+    cogs.Trigger,
 ]:
     bot.add_cog(cog(bot))
 
