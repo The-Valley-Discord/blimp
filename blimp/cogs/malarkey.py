@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
 import discord
@@ -23,7 +23,7 @@ class Malarkey(Blimp.Cog):
     @commands.command()
     async def ping(self, ctx: Blimp.Context):
         "Find out if the bot's still alive. It's easier to just ping it."
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         pong = random.choice(self.pings)
         in_delta = now - ctx.message.created_at
         msg = await ctx.reply(
