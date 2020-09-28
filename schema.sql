@@ -85,3 +85,43 @@ CREATE TABLE IF NOT EXISTS channelban_entries (
     FOREIGN KEY (issuer_oid) REFERENCES objects(oid),
     PRIMARY KEY (channel_oid, user_oid)
 );
+
+CREATE TABLE IF NOT EXISTS ticket_categories (
+    category_oid INTEGER PRIMARY KEY,
+    guild_oid INTEGER NOT NULL,
+    count INTEGER NOT NULL,
+    transcript_channel_oid INTEGER NOT NULL,
+    per_user_limit INTEGER,
+    can_creator_close BOOL NOT NULL,
+
+    FOREIGN KEY (category_oid) REFERENCES objects(oid),
+    FOREIGN KEY (guild_oid) REFERENCES objects(oid),
+    FOREIGN KEY (transcript_channel_oid) REFERENCES objects(oid)
+);
+
+CREATE TABLE IF NOT EXISTS ticket_classes (
+    category_oid INTEGER NOT NULL,
+    name STRING NOT NULL,
+    description STRING,
+
+    FOREIGN KEY (category_oid) REFERENCES objects(oid),
+    PRIMARY KEY (category_oid, name)
+);
+
+CREATE TABLE IF NOT EXISTS ticket_entries (
+    channel_oid INTEGER PRIMARY KEY,
+    category_oid INTEGER NOT NULL,
+    creator_id INTEGER NOT NULL,
+    open BOOLEAN NOT NULL,
+
+    FOREIGN KEY (category_oid) REFERENCES objects(oid),
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid)
+);
+
+CREATE TABLE IF NOT EXISTS ticket_participants (
+    channel_oid INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+
+    FOREIGN KEY (channel_oid) REFERENCES objects(oid),
+    PRIMARY KEY(channel_oid, user_id)
+);
