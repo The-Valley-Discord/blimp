@@ -35,7 +35,7 @@ class Tickets(Blimp.Cog):
             return
 
         log_embed = discord.Embed(
-            description=f"{ctx.author} updated ticket category {category.mention}",
+            description=f"{ctx.author} updated ticket category {category.name}",
             color=ctx.Color.I_GUESS,
         )
 
@@ -82,7 +82,7 @@ class Tickets(Blimp.Cog):
 
         await self.bot.post_log(category.guild, embed=log_embed)
 
-        await ctx.reply(f"Updated ticket category {category.mention}.")
+        await ctx.reply(f"Updated ticket category {category.name}.")
 
     @commands.command(parent=ticket)
     async def updateclass(
@@ -99,7 +99,7 @@ class Tickets(Blimp.Cog):
             return
 
         log_embed = discord.Embed(
-            description=f"{ctx.author} updated ticket class {category.mention}/{name}",
+            description=f"{ctx.author} updated ticket class {category.name}/{name}",
             color=ctx.Color.I_GUESS,
         )
 
@@ -129,7 +129,7 @@ class Tickets(Blimp.Cog):
 
         await self.bot.post_log(category.guild, embed=log_embed)
 
-        await ctx.reply(f"Updated ticket class {category.mention}/{name}.")
+        await ctx.reply(f"Updated ticket class {category.name}/{name}.")
 
     @commands.command(parent=ticket, name="open")
     async def _open(
@@ -178,10 +178,6 @@ class Tickets(Blimp.Cog):
                     },
                 ).fetchone()
                 if count[0] >= ticket_category["per_user_limit"]:
-                    await ctx.reply(
-                        f"you can't have more than {ticket_category['per_user_limit']} tickets",
-                        color=ctx.Color.BAD,
-                    )
                     return
 
             ticket_channel = await category.create_text_channel(
@@ -220,6 +216,12 @@ class Tickets(Blimp.Cog):
                     "channel_oid": ctx.objects.make_object(tc=ticket_channel.id),
                     "user_id": ctx.author.id,
                 },
+            )
+
+            await ctx.bot.post_log(
+                ticket_channel.guild,
+                f"{ctx.author} opened ticket {ticket_channel.name} [{ticket_channel.mention}].",
+                color=ctx.Color.I_GUESS,
             )
 
         initial_message = await ticket_channel.send(

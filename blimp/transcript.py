@@ -204,7 +204,9 @@ class Transcript:
                             for a in message.attachments
                         ]
                     )
-                    + "\n".join([cls.write_embed(e) for e in message.embeds]),
+                    + "\n".join(
+                        [cls.write_embed(e) for e in message.embeds if e.type == "rich"]
+                    ),
                 )
             )
         file.write(cls.TRANSCRIPT_FOOTER)
