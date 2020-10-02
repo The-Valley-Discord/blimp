@@ -112,3 +112,32 @@ class Tools(Blimp.Cog):
 
         await ctx.bot.post_log(channel.guild, embed=log_embed)
         await ctx.reply(f"Updated channel topic for {channel.mention}.")
+
+    @commands.command()
+    async def setchannelname(
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
+        *,
+        text: str,
+    ):
+        "Set the name of a channel."
+        if not channel:
+            channel = ctx.channel
+
+        if not ctx.privileged_modify(channel):
+            return
+
+        log_embed = (
+            discord.Embed(
+                description=f"{ctx.author} updated the name of {channel.mention}.",
+                color=ctx.Color.I_GUESS,
+            )
+            .add_field(name="Old", value=channel.name)
+            .add_field(name="New", value=text)
+        )
+
+        await channel.edit(name=text, reason=str(ctx.author))
+
+        await ctx.bot.post_log(channel.guild, embed=log_embed)
+        await ctx.reply(f"Updated channel name for {channel.mention}.")
