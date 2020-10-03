@@ -5,19 +5,15 @@ with import (builtins.fetchTarball {
   sha256 = "1ar7prnrmmlqj17g57nqp82hgy5283dxb94akaqrwpbaz7qfwi4y";
 }) { };
 
-python3Packages.buildPythonPackage {
-  pname = "blimp";
-  version = "unstable";
+poetry2nix.mkPoetryApplication {
+  projectDir = ./.;
 
-  doCheck = false;
-
+  # default cleaning of non-source files, but also ignore config and database
   src = lib.cleanSourceWith {
     filter = name: type:
       let baseName = baseNameOf (toString name);
       in !(baseName == "blimp.cfg" || baseName == "blimp.db");
-    src = lib.cleanSource ./.;
-  };
 
-  buildInputs = with python3Packages; [ black pylint ];
-  propagatedBuildInputs = with python3Packages; [ discordpy ];
+    src = poetry2nix.cleanPythonSources { src = ./.; };
+  };
 }
