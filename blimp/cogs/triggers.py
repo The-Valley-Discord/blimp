@@ -4,10 +4,10 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedMessage
+from .aliasing import MaybeAliasedMessage
 
 
-class Trigger(Blimp.Cog):
+class Triggers(Blimp.Cog):
     """*The Big Red Button.*
     Triggers allow your users to invoke pre-set commands by reacting to a specific message."""
 
@@ -41,11 +41,13 @@ class Trigger(Blimp.Cog):
         ).fetchone()
         if old:
             log_embed.add_field(
-                name="Old", value=old["command"],
+                name="Old",
+                value=old["command"],
             )
 
         log_embed.add_field(
-            name="New", value=command,
+            name="New",
+            value=command,
         )
 
         await msg.add_reaction(emoji)

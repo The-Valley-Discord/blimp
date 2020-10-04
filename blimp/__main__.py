@@ -25,20 +25,22 @@ for source in config["log"]["suppress"].split(","):
     )
 
 bot = Blimp(
-    config, case_insensitive=True, activity=Blimp.random_status(), help_command=None,
+    config,
+    case_insensitive=True,
+    activity=Blimp.random_status(),
+    help_command=None,
 )
 for cog in [
-    cogs.RoleKiosk,
     cogs.Aliasing,
-    cogs.Welcome,
     cogs.Board,
+    cogs.BotLog,
+    cogs.LongSlowmode,
     cogs.Malarkey,
-    cogs.Tools,
-    cogs.Logging,
-    cogs.Slowmode,
     cogs.Moderation,
     cogs.Tickets,
-    cogs.Trigger,
+    cogs.Tools,
+    cogs.Triggers,
+    cogs.WelcomeLog,
 ]:
     bot.add_cog(cog(bot))
 
@@ -71,24 +73,27 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
             "with individual commands or any of the larger features "
             "listed below.\nThere's also an [online manual]"
             f"({ctx.bot.config['info']['manual']}) and, of course, the [source "
-            f"code]({ctx.bot.config['info']['source']})."
+            f"code]({ctx.bot.config['info']['source']}).\n\n"
         )
-        embed.add_field(name="Core", value=signature(_help))
 
-        for name, cog in ctx.bot.cogs.items():  # pylint: disable=redefined-outer-name
+        for name, cog in sorted(  # pylint: disable=redefined-outer-name
+            ctx.bot.cogs.items(), key=lambda tup: tup[0]
+        ):
             all_commands = []
             for command in cog.get_commands():
                 if isinstance(command, commands.Group):
-                    all_commands.extend([signature(sub) for sub in command.commands])
+                    all_commands.extend(
+                        [f"`{command.name} {sub.name}`" for sub in command.commands]
+                    )
                 else:
-                    all_commands.append(signature(command))
+                    all_commands.append(f"`{command.name}`")
 
-            embed.add_field(
-                name=name,
-                value=cog.description.split("\n")[0]
+            embed.description += (
+                f"**{name}** "
+                + cog.description.split("\n")[0]
                 + "\n"
-                + "\n".join(sorted(all_commands)),
-                inline=False,
+                + " ".join(all_commands)
+                + "\n\n"
             )
     else:
         for name, cog in ctx.bot.cogs.items():
@@ -153,7 +158,7 @@ async def on_command_error(ctx, error):
         )
 
 
-def main():
+def main():  # pylint: disable=missing-function-docstring
     bot.run(config["discord"]["token"])
 
 

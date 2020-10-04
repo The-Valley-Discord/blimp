@@ -1,15 +1,13 @@
 from discord.ext import commands
 
-
-from .alias import Aliasing
+from .aliasing import Aliasing
 from .board import Board
+from .botlog import BotLog
+from .longslowmode import LongSlowmode
 from .malarkey import Malarkey
-from .reminders import Reminders
-from .rolekiosk import RoleKiosk
-from .welcome import Welcome
-from .tools import Tools
-from .logging import Logging
-from .slowmode import Slowmode
 from .moderation import Moderation
+from .reminders import Reminders
 from .tickets import Tickets
-from .trigger import Trigger
+from .tools import Tools
+from .triggers import Triggers
+from .welcomelog import WelcomeLog

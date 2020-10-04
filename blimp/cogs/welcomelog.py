@@ -5,10 +5,10 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedTextChannel
 
 
-class Welcome(Blimp.Cog):
+class WelcomeLog(Blimp.Cog):
     """*Greeting and goodbye-ing people.*
     Welcome and Goodbye allow you to greet and see off users that join/leave
     your server. The messages allow you to mention the user in question, but

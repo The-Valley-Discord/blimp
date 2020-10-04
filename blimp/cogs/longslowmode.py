@@ -5,10 +5,10 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, ParseableTimedelta
-from .alias import MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedTextChannel
 
 
-class Slowmode(Blimp.Cog):
+class LongSlowmode(Blimp.Cog):
     """*Deleting things that are just too new for your taste.*
     Manages slowmode enforcement for arbitrary durations."""
 

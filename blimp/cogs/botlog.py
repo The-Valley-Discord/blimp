@@ -1,10 +1,10 @@
 from discord.ext import commands
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedTextChannel
 
 
-class Logging(Blimp.Cog):
+class BotLog(Blimp.Cog):
     """*Watching with ten thousand eyes.*
     Set up logging for your server to keep you informed on BLIMP actions."""
 

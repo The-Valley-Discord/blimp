@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import UserInputError
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedMessage
+from .aliasing import MaybeAliasedMessage
 
 
 class RoleKiosk(Blimp.Cog):
@@ -260,7 +260,9 @@ class RoleKiosk(Blimp.Cog):
 
     @commands.command(parent=kiosk)
     async def delete(
-        self, ctx: Blimp.Context, msg: MaybeAliasedMessage,
+        self,
+        ctx: Blimp.Context,
+        msg: MaybeAliasedMessage,
     ):
         "Delete a role kiosk (but not the message)."
 
@@ -322,7 +324,8 @@ class RoleKiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).add_roles(
-                *roles, reason=f"Role Kiosk {payload.message_id}",
+                *roles,
+                reason=f"Role Kiosk {payload.message_id}",
             )
 
     @Blimp.Cog.listener()
@@ -336,5 +339,6 @@ class RoleKiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).remove_roles(
-                *roles, reason=f"Role Kiosk {payload.message_id}",
+                *roles,
+                reason=f"Role Kiosk {payload.message_id}",
             )

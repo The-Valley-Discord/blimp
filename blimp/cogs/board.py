@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedTextChannel
 
 
 class Board(Blimp.Cog):
@@ -183,7 +183,9 @@ class Board(Blimp.Cog):
                 and react.count >= min_reacts
             ]
             reaction = sorted(
-                possible_reactions, key=lambda react: react.count, reverse=True,
+                possible_reactions,
+                key=lambda react: react.count,
+                reverse=True,
             )
             if not reaction:
                 continue

@@ -5,7 +5,7 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 from ..customizations import Blimp
 from ..transcript import Transcript
 
@@ -109,7 +109,8 @@ class Tickets(Blimp.Cog):
         ).fetchone()
         if old:
             log_embed.add_field(
-                name="Old Description", value=description,
+                name="Old Description",
+                value=description,
             )
 
         ctx.database.execute(
@@ -124,7 +125,8 @@ class Tickets(Blimp.Cog):
         )
 
         log_embed.add_field(
-            name="New Description", value=description,
+            name="New Description",
+            value=description,
         )
 
         await self.bot.post_log(category.guild, embed=log_embed)
@@ -257,7 +259,9 @@ class Tickets(Blimp.Cog):
 
     @commands.command(parent=ticket)
     async def delete(
-        self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel],
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
     ):
         """Delete a ticket and post a transcript."""
 
@@ -293,7 +297,10 @@ class Tickets(Blimp.Cog):
             microseconds=ctx.message.created_at.microsecond
         )
         archive_embed = (
-            discord.Embed(title=f"#{channel.name}", color=ctx.Color.I_GUESS,)
+            discord.Embed(
+                title=f"#{channel.name}",
+                color=ctx.Color.I_GUESS,
+            )
             .add_field(
                 name="Created",
                 value=str(created_timestamp) + f"\n<@{ticket['creator_id']}>",
@@ -424,7 +431,8 @@ class Tickets(Blimp.Cog):
             overwrites_without_member = channel.overwrites
             overwrites_without_member.pop(member, None)
             await channel.edit(
-                overwrites=overwrites_without_member, reason=str(ctx.author),
+                overwrites=overwrites_without_member,
+                reason=str(ctx.author),
             )
             ctx.database.execute(
                 """DELETE FROM ticket_participants WHERE channel_oid = :channel_oid

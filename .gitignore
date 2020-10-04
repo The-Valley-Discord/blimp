@@ -3,3 +3,4 @@ blimp.cfg
 blimp.db
 *.egg-info
 result
+.vscode

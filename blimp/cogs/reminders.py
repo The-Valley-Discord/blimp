@@ -69,14 +69,15 @@ class Reminders(Blimp.Cog):
                 raise
             finally:
                 self.bot.database.execute(
-                    "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
+                    "DELETE FROM reminders_entries WHERE id=:id",
+                    {"id": entry["id"]},
                 )
 
     @commands.group()
-    async def reminders(self, ctx: Blimp.Context):
+    async def reminder(self, ctx: Blimp.Context):
         "Manage timed reminders."
 
-    @commands.command(parent=reminders, name="list")
+    @commands.command(parent=reminder, name="list")
     async def _list(self, ctx: Blimp.Context):
         "List all pending reminders for you."
         rems = ctx.database.execute(
@@ -105,7 +106,7 @@ class Reminders(Blimp.Cog):
 
         await ctx.reply("\n".join(rows))
 
-    @commands.command(parent=reminders)
+    @commands.command(parent=reminder)
     async def delete(self, ctx: Blimp.Context, number: int):
         "Delete one of your reminders."
 

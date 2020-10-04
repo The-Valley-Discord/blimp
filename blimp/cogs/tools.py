@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, ParseableTimedelta
-from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 
 
 class Tools(Blimp.Cog):

@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from ..customizations import Blimp
-from .alias import MaybeAliasedTextChannel
+from .aliasing import MaybeAliasedTextChannel
 
 
 class Moderation(Blimp.Cog):
@@ -126,7 +126,10 @@ class Moderation(Blimp.Cog):
                 log_str += f"<#{channel_id}> Error, auto-unbanning.\n"
                 self.bot.database.execute(
                     "DELETE FROM channelban_entries WHERE user_oid=:u_oid AND channel_oid=:c_oid",
-                    {"u_oid": row["user_oid"], "c_oid": row["channel_oid"],},
+                    {
+                        "u_oid": row["user_oid"],
+                        "c_oid": row["channel_oid"],
+                    },
                 )
 
         log_embed = discord.Embed(
