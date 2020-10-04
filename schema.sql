@@ -132,5 +132,13 @@ CREATE TABLE IF NOT EXISTS trigger_entries (
     command STRING NOT NULL,
 
     FOREIGN KEY (message_oid) REFERENCES objects(oid),
-    PRIMARY KEY(message_oid, emoji)
+    PRIMARY KEY (message_oid, emoji)
+);
+
+CREATE TABLE IF NOT EXISTS post_entries (
+    message_oid INTEGER NOT NULL,
+    text STRING NOT NULL,
+
+    FOREIGN KEY (message_oid) REFERENCES objects(oid),
+    PRIMARY KEY (message_oid)
 );

@@ -49,8 +49,16 @@ for cog in [
 async def on_ready():
     """Hello world."""
     bot.log.info(f"Logged in as {bot.user}")
+
     bot.add_cog(cogs.Reminders(bot))
     bot.owner_id = (await bot.application_info()).owner.id
+
+    # we can't use fstrings in docstrings, so insert the manual link manually here
+    post_command = [c for c in bot.commands if c.name[:-1] == "post"][0]
+    post_command.help = post_command.help.replace(
+        "MANUALLINKHERE",
+        f"[extended message formatting]({bot.config['info']['manual']}#extended-post-format)",
+    )
 
 
 @bot.command(name="help")

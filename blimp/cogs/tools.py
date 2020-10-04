@@ -1,11 +1,17 @@
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands
+import toml
 
 from ..customizations import Blimp, ParseableTimedelta
-from .aliasing import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
+from .aliasing import (
+    MaybeAliasedCategoryChannel,
+    MaybeAliasedTextChannel,
+    MaybeAliasedMessage,
+)
+from ..message_formatter import create_message_dict
 
 
 class Tools(Blimp.Cog):
@@ -141,3 +147,61 @@ class Tools(Blimp.Cog):
 
         await ctx.bot.post_log(channel.guild, embed=log_embed)
         await ctx.reply(f"Updated channel name for {channel.mention}.")
+
+    @commands.command()
+    async def post(
+        self,
+        ctx: Blimp.Context,
+        where: Union[MaybeAliasedTextChannel, MaybeAliasedMessage],
+        *,
+        text: str,
+    ):
+        """Make the bot post something.
+
+        <where> may be a channel or a message created by this command to update.
+        <text> may be either plain text for the message content or TOML data for MANUALLINKHERE."""
+
+        if not ctx.privileged_modify(where.guild):
+            return
+
+        try:
+            text = toml.dumps(toml.loads(text))
+        except toml.TomlDecodeError:
+            pass
+
+        if isinstance(where, discord.TextChannel):
+            message = await where.send(**create_message_dict(text))
+            ctx.database.execute(
+                "INSERT INTO post_entries(message_oid, text) VALUES(:oid, :text)",
+                {
+                    "oid": ctx.objects.make_object(m=[message.channel.id, message.id]),
+                    "text": text,
+                },
+            )
+        else:
+            old = ctx.database.execute(
+                "SELECT * FROM post_entries WHERE message_oid=:oid",
+                {"oid": ctx.objects.by_data(m=[where.channel.id, where.id])},
+            ).fetchone()
+            if not old:
+                return
+
+            log_embed = (
+                discord.Embed(
+                    description=f"{ctx.author} updated "
+                    f"[BLIMP post in #{where.channel.name}]({where.jump_url}).",
+                    color=ctx.Color.I_GUESS,
+                )
+                .add_field(name="Old", value=old["text"])
+                .add_field(name="New", value=text)
+            )
+
+            ctx.database.execute(
+                "UPDATE post_entries SET text=:text WHERE message_oid=:oid",
+                {
+                    "text": text,
+                    "oid": ctx.objects.by_data(m=[where.channel.id, where.id]),
+                },
+            )
+            await where.edit(**create_message_dict(text))
+            await ctx.bot.post_log(where.guild, embed=log_embed)
