@@ -7,6 +7,7 @@ from .longslowmode import LongSlowmode
 from .malarkey import Malarkey
 from .moderation import Moderation
 from .reminders import Reminders
+from .rolekiosk import RoleKiosk
 from .tickets import Tickets
 from .tools import Tools
 from .triggers import Triggers

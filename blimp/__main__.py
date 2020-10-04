@@ -41,6 +41,7 @@ for cog in [
     cogs.Tools,
     cogs.Triggers,
     cogs.WelcomeLog,
+    cogs.RoleKiosk,
 ]:
     bot.add_cog(cog(bot))
 
