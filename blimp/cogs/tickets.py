@@ -4,10 +4,12 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
+import toml
 
 from .aliasing import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 from ..customizations import Blimp
 from ..transcript import Transcript
+from ..message_formatter import create_message_dict
 
 
 class Tickets(Blimp.Cog):
@@ -103,6 +105,11 @@ class Tickets(Blimp.Cog):
             color=ctx.Color.I_GUESS,
         )
 
+        try:
+            description = toml.dumps(toml.loads(description))
+        except toml.TomlDecodeError:
+            pass
+
         old = ctx.database.execute(
             "SELECT * FROM ticket_classes WHERE category_oid=:category_oid and name=:name",
             {"category_oid": ctx.objects.by_data(cc=category.id), "name": name},
@@ -110,7 +117,7 @@ class Tickets(Blimp.Cog):
         if old:
             log_embed.add_field(
                 name="Old Description",
-                value=description,
+                value=old["description"],
             )
 
         ctx.database.execute(
@@ -242,7 +249,7 @@ class Tickets(Blimp.Cog):
         )
         await initial_message.pin()
         await ticket_channel.purge(limit=1, check=lambda m: m.author == self.bot.user)
-        await ticket_channel.send(actual_class["description"])
+        await ticket_channel.send(**create_message_dict(actual_class["description"]))
         ctx.database.execute(
             """INSERT INTO
             trigger_entries(message_oid, emoji, command)

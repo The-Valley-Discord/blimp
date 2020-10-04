@@ -178,6 +178,14 @@ class Tools(Blimp.Cog):
                     "text": text,
                 },
             )
+            await ctx.bot.post_log(
+                where.guild,
+                embed=discord.Embed(
+                    description=f"{ctx.author} created a "
+                    f"[BLIMP post in #{message.channel.name}]({message.jump_url}).",
+                    color=ctx.Color.I_GUESS,
+                ).add_field(name="New", value=text),
+            )
         else:
             old = ctx.database.execute(
                 "SELECT * FROM post_entries WHERE message_oid=:oid",
@@ -185,16 +193,6 @@ class Tools(Blimp.Cog):
             ).fetchone()
             if not old:
                 return
-
-            log_embed = (
-                discord.Embed(
-                    description=f"{ctx.author} updated "
-                    f"[BLIMP post in #{where.channel.name}]({where.jump_url}).",
-                    color=ctx.Color.I_GUESS,
-                )
-                .add_field(name="Old", value=old["text"])
-                .add_field(name="New", value=text)
-            )
 
             ctx.database.execute(
                 "UPDATE post_entries SET text=:text WHERE message_oid=:oid",
@@ -204,4 +202,13 @@ class Tools(Blimp.Cog):
                 },
             )
             await where.edit(**create_message_dict(text))
-            await ctx.bot.post_log(where.guild, embed=log_embed)
+            await ctx.bot.post_log(
+                where.guild,
+                embed=discord.Embed(
+                    description=f"{ctx.author} updated a "
+                    f"[BLIMP post in #{where.channel.name}]({where.jump_url}).",
+                    color=ctx.Color.I_GUESS,
+                )
+                .add_field(name="Old", value=old["text"])
+                .add_field(name="New", value=text),
+            )

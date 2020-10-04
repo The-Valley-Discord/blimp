@@ -3,9 +3,11 @@ from string import Template
 
 import discord
 from discord.ext import commands
+import toml
 
 from ..customizations import Blimp
 from .aliasing import MaybeAliasedTextChannel
+from ..message_formatter import create_message_dict
 
 
 class WelcomeLog(Blimp.Cog):
@@ -13,7 +15,20 @@ class WelcomeLog(Blimp.Cog):
     Welcome and Goodbye allow you to greet and see off users that join/leave
     your server. The messages allow you to mention the user in question, but
     don't offer a lot of detail a proper logging bot would provide, mostly
-    because that's a different use case."""
+    because that's a different use case.
+    Inside greeting texts, the following variables are available: `$user`
+    mentions the member, `$id` is their ID, `$tag` is their DiscordTag#1234,
+    and `$avatar` is their avatar."""
+
+    @staticmethod
+    def member_variables(member: discord.Member) -> dict:
+        "Extract the greeting template variables from a member object."
+        return {
+            "user": member.mention,
+            "id": member.id,
+            "tag": str(member),
+            "avatar": member.avatar_url,
+        }
 
     @commands.group()
     async def welcome(self, ctx: Blimp.Context):
@@ -33,6 +48,11 @@ class WelcomeLog(Blimp.Cog):
         logging_embed = discord.Embed(
             description=f"{ctx.author} updated Welcome.", color=ctx.Color.I_GUESS
         )
+
+        try:
+            greeting = toml.dumps(toml.loads(greeting))
+        except toml.TomlDecodeError:
+            pass
 
         old = ctx.database.execute(
             "SELECT * FROM welcome_configuration WHERE oid=:oid",
@@ -57,7 +77,11 @@ class WelcomeLog(Blimp.Cog):
 
         await ctx.reply("*Overwrote welcome configuration, example message follows.*")
         await ctx.send(
-            Template(greeting).safe_substitute({"user": channel.guild.me.mention})
+            **create_message_dict(
+                Template(greeting).safe_substitute(
+                    self.member_variables(channel.guild.me)
+                )
+            )
         )
 
     @commands.command(parent=welcome, name="disable")
@@ -101,7 +125,11 @@ class WelcomeLog(Blimp.Cog):
         data = json.loads(row["join_data"])
         channel = self.bot.get_channel(objects.by_oid(data[0])["tc"])
 
-        await channel.send(Template(data[1]).safe_substitute({"user": member.mention}))
+        await channel.send(
+            **create_message_dict(
+                Template(data[1]).safe_substitute(self.member_variables(member))
+            )
+        )
 
     @commands.group()
     async def goodbye(self, ctx: Blimp.Context):
@@ -121,6 +149,11 @@ class WelcomeLog(Blimp.Cog):
         logging_embed = discord.Embed(
             description=f"{ctx.author} updated Goodbye.", color=ctx.Color.I_GUESS
         )
+
+        try:
+            greeting = toml.dumps(toml.loads(greeting))
+        except toml.TomlDecodeError:
+            pass
 
         old = ctx.database.execute(
             "SELECT * FROM welcome_configuration WHERE oid=:oid",
@@ -145,7 +178,11 @@ class WelcomeLog(Blimp.Cog):
 
         await ctx.reply("*Overwrote goodbye configuration, example message follows.*")
         await ctx.send(
-            Template(greeting).safe_substitute({"user": channel.guild.me.mention})
+            **create_message_dict(
+                Template(greeting).safe_substitute(
+                    self.member_variables(channel.guild.me)
+                )
+            )
         )
 
     @commands.command(parent=goodbye, name="disable")
@@ -187,4 +224,8 @@ class WelcomeLog(Blimp.Cog):
         data = json.loads(row["leave_data"])
         channel = self.bot.get_channel(objects.by_oid(data[0])["tc"])
 
-        await channel.send(Template(data[1]).safe_substitute({"user": member.mention}))
+        await channel.send(
+            **create_message_dict(
+                Template(data[1]).safe_substitute(self.member_variables(member))
+            )
+        )
