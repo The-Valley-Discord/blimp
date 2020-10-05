@@ -1,6 +1,6 @@
-from datetime import datetime
 import json
 import re
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -179,9 +179,7 @@ class Board(Blimp.Cog):
                 and react.count >= min_reacts
             ]
             reaction = sorted(
-                possible_reactions,
-                key=lambda react: react.count,
-                reverse=True,
+                possible_reactions, key=lambda react: react.count, reverse=True,
             )
             if not reaction:
                 continue

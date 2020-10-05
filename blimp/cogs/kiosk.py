@@ -264,9 +264,7 @@ class Kiosk(Blimp.Cog):
 
     @commands.command(parent=kiosk)
     async def delete(
-        self,
-        ctx: Blimp.Context,
-        msg: MaybeAliasedMessage,
+        self, ctx: Blimp.Context, msg: MaybeAliasedMessage,
     ):
         "Delete a role kiosk (but not the message)."
 
@@ -326,8 +324,7 @@ class Kiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).add_roles(
-                *roles,
-                reason=f"Role Kiosk {payload.message_id}",
+                *roles, reason=f"Role Kiosk {payload.message_id}",
             )
 
     @Blimp.Cog.listener()
@@ -341,6 +338,5 @@ class Kiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).remove_roles(
-                *roles,
-                reason=f"Role Kiosk {payload.message_id}",
+                *roles, reason=f"Role Kiosk {payload.message_id}",
             )

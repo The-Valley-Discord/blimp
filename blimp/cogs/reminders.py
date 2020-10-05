@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta, timezone
 import re
-from typing import Union, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Union
 
 import discord
 from discord.ext import commands, tasks
@@ -71,8 +71,7 @@ class Reminders(Blimp.Cog):
                 raise
             finally:
                 self.bot.database.execute(
-                    "DELETE FROM reminders_entries WHERE id=:id",
-                    {"id": entry["id"]},
+                    "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
                 )
 
     @commands.group()

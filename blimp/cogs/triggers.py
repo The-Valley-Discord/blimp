@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp, Unauthorized, UnableToComply
+from ..customizations import Blimp, UnableToComply, Unauthorized
 from .alias import MaybeAliasedMessage
 
 
@@ -47,13 +47,11 @@ class Triggers(Blimp.Cog):
         ).fetchone()
         if old:
             log_embed.add_field(
-                name="Old",
-                value=old["command"],
+                name="Old", value=old["command"],
             )
 
         log_embed.add_field(
-            name="New",
-            value=command,
+            name="New", value=command,
         )
 
         await msg.add_reaction(emoji)

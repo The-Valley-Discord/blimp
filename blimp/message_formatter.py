@@ -1,5 +1,5 @@
 import discord
-from toml import loads, TomlDecodeError
+from toml import TomlDecodeError, loads
 
 from .customizations import Blimp
 

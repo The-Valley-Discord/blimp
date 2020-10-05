@@ -2,16 +2,16 @@ import asyncio
 from typing import Optional, Union
 
 import discord
-from discord.ext import commands
 import toml
+from discord.ext import commands
 
 from ..customizations import Blimp, ParseableTimedelta, Unauthorized
+from ..message_formatter import create_message_dict
 from .alias import (
     MaybeAliasedCategoryChannel,
-    MaybeAliasedTextChannel,
     MaybeAliasedMessage,
+    MaybeAliasedTextChannel,
 )
-from ..message_formatter import create_message_dict
 
 
 class Tools(Blimp.Cog):

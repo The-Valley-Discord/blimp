@@ -2,12 +2,12 @@ import json
 from string import Template
 
 import discord
-from discord.ext import commands
 import toml
+from discord.ext import commands
 
-from ..customizations import Blimp, Unauthorized, UnableToComply
-from .alias import MaybeAliasedTextChannel
+from ..customizations import Blimp, UnableToComply, Unauthorized
 from ..message_formatter import create_message_dict
+from .alias import MaybeAliasedTextChannel
 
 
 class WelcomeLog(Blimp.Cog):

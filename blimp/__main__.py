@@ -2,18 +2,17 @@
 Actually the interesting file, init code lives here
 """
 
-from configparser import ConfigParser
 import logging
 import re
+from configparser import ConfigParser
 from string import Template
 from typing import Optional
 
 import discord
 from discord.ext import commands
 
-from .customizations import Blimp, PleaseRestate, AnticipatedError, Unauthorized
 from . import cogs
-
+from .customizations import AnticipatedError, Blimp, PleaseRestate, Unauthorized
 
 config = ConfigParser()
 config.read("blimp.cfg")
@@ -166,9 +165,7 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.UserInputError):
         await ctx.reply(
-            str(error),
-            title=PleaseRestate.TEXT,
-            color=ctx.Color.BAD,
+            str(error), title=PleaseRestate.TEXT, color=ctx.Color.BAD,
         )
         return
     elif isinstance(error, commands.CommandNotFound):
@@ -178,8 +175,7 @@ async def on_command_error(ctx, error):
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
         await ctx.reply(
-            title="Unable to comply, internal error.",
-            color=ctx.Color.BAD,
+            title="Unable to comply, internal error.", color=ctx.Color.BAD,
         )
 
 
