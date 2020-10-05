@@ -9,8 +9,7 @@ from ..eff_large_wordlist import WORDS
 
 
 class Malarkey(Blimp.Cog):
-    """*Silly things.*
-    And you know why? Because life itself is filled with no reason."""
+    "And you know why? Because life itself is filled with no reason."
 
     pings = ["Pong!", "Ping!", "DING!", "Pyongyang!", "PLONK", "Pink!"]
 
@@ -27,12 +26,14 @@ class Malarkey(Blimp.Cog):
         pong = random.choice(self.pings)
         in_delta = now - ctx.message.created_at
         msg = await ctx.reply(
-            f"*{pong}*", subtitle=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms",
+            f"*{pong}*",
+            subtitle=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms",
         )
         out_delta = msg.created_at - now
         await msg.edit(
             embed=discord.Embed(
-                color=ctx.Color.GOOD, description=f"*{pong}*",
+                color=ctx.Color.GOOD,
+                description=f"*{pong}*",
             ).set_footer(
                 text=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms | "
                 f"Outbound: {out_delta/timedelta(milliseconds=1)}ms"
@@ -41,17 +42,23 @@ class Malarkey(Blimp.Cog):
 
     @commands.command()
     async def givemeafreegenderneutralname(self, ctx: Blimp.Context):
-        """
-        Generates gender-neutral names (or codenames, if you're feeling secretive),
-        words courtesy of the Electronic Frontier Foundation (CC-BY 3.0)
-        """
+        """Get yourself a free and gender-neutral name.
+
+        Words courtesy of the EFF."""
+
         amount = random.randint(2, 3)
         words = random.choices(WORDS, k=amount)
 
-        await ctx.reply(f"{ctx.author.mention} is now known as **{' '.join(words)}**.")
+        await ctx.reply(
+            "**I AUTHORISE AND REQUIRE** all persons at all times to designate, "
+            f"describe, and address {ctx.author.mention} by the adopted free and gender-neutral "
+            f"name of **{' '.join(words)}**."
+        )
 
     @commands.command()
     async def choose(self, ctx: Blimp.Context, *options):
-        "Choose a random option of those provided"
+        """Choose a random option of those provided.
+
+        `options` is a space-separated list of options."""
 
         await ctx.reply(f"Hmmm… I choose {random.choice(options)}!")

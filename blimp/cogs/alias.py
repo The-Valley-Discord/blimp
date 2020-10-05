@@ -4,30 +4,28 @@ from typing import Union
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
+from ..customizations import Blimp, UnableToComply, Unauthorized
 
 
-class Aliasing(Blimp.Cog):
-    """*Giving names to things.*
-    Aliases allow you to refer to channels and messages (more targets to come)
-    using simple, server-specific codes like `'rules` or `'the_bread_message`,
-    that way you don't need to remember unwieldly Discord IDs."""
+class Alias(Blimp.Cog):
+    "Giving names to things."
 
     @staticmethod
     def validate_alias(string) -> None:
         """Check if something should be allowed to be an alias."""
         if len(string) < 2 or string[0] != "'":
-            raise commands.UserInputError(
-                "Aliases must start with ' and have at least one character after that."
+            raise UnableToComply(
+                f"Alias {string} does not consist of an apostrophe followed by at least one "
+                "character."
             )
         if len([ch for ch in string if ch.isspace()]) > 0:
-            raise commands.UserInputError("Aliases may not contain whitespace.")
+            raise UnableToComply(f"Alias {string} contains whitespace.")
 
     @commands.group()
     async def alias(self, ctx: Blimp.Context):
-        """
-        Aliases for things so you don't always have to grab their ID
-        """
+        """Aliases allow you to refer to e.g. messages or channels using simple, server-specific
+        codes like `'rules` or `'the_bread_message`. This way you don't need to remember unwieldly
+        Discord IDs like `526166150749618178`."""
 
     @commands.command(parent=alias)
     async def make(
@@ -37,11 +35,15 @@ class Aliasing(Blimp.Cog):
         alias: str,
     ):
         """
-        Create an alias for a Discord object (messages, channels, categories).
-        Aliases must start with a single ', have no whitespace, and be unique.
+        Create an alias to refer to a Discord object.
+
+        `target` may be a message, a text channel, or a category.
+
+        `alias` must start with an apostrophe `'` and contain no whitespace, but is otherwise
+        entirely your choice.
         """
         if not ctx.privileged_modify(ctx.guild):
-            return
+            raise Unauthorized()
 
         self.validate_alias(alias)
 
@@ -64,14 +66,7 @@ class Aliasing(Blimp.Cog):
             )
         except sqlite3.DatabaseError:
             ctx.database.execute("ABORT;")
-            await ctx.reply(
-                "*that word seems common*\n"
-                "*for it's an alias.*\n"
-                "*no doubles allowed.*",
-                subtitle=f"{alias} is already registered as an alias.",
-                color=ctx.Color.I_GUESS,
-            )
-            return
+            raise UnableToComply(f"Alias {alias} is already registered.")
 
         ctx.database.execute("COMMIT;")
 
@@ -80,23 +75,18 @@ class Aliasing(Blimp.Cog):
 
     @commands.command(parent=alias)
     async def delete(self, ctx: Blimp.Context, alias: str):
-        "Delete an alias, freeing it up for renewed use."
+        """Delete an alias, freeing it up for renewed use.
+
+        `alias` must have been registered as an alias before."""
 
         if not ctx.privileged_modify(ctx.guild):
-            return
+            raise Unauthorized()
 
         self.validate_alias(alias)
 
         old = ctx.objects.by_alias(ctx.guild.id, alias)
         if not old:
-            await ctx.reply(
-                "*commonly you ask*\n"
-                "*to delete extant objects*\n"
-                "*though not this time.*",
-                subject="Unknown alias.",
-                color=ctx.Color.I_GUESS,
-            )
-            return
+            raise UnableToComply(f"Alias {alias} doesn't exist.")
 
         ctx.database.execute(
             "DELETE FROM aliases WHERE gid=:gid AND alias=:alias",
@@ -110,6 +100,7 @@ class Aliasing(Blimp.Cog):
     @commands.command(parent=alias, name="list")
     async def _list(self, ctx: Blimp.Context):
         "List all aliases currently configured for this server."
+
         cursor = ctx.database.execute(
             "SELECT * FROM aliases WHERE gid=:gid", {"gid": ctx.guild.id}
         )
@@ -121,13 +112,7 @@ class Aliasing(Blimp.Cog):
             [f"{d[0]}: {await ctx.bot.represent_object(d[1])}" for d in data]
         )
         if not result:
-            await ctx.reply(
-                "*honest yet verbose,*\n"
-                "*no aliases 'round here.*\n"
-                "*maybe you'll change that?*",
-                subtitle="No aliases configured for this server.",
-                color=ctx.Color.I_GUESS,
-            )
+            await ctx.reply("*There are no aliases configured in this server.*")
             return
 
         await ctx.reply(result)

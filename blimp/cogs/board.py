@@ -5,19 +5,17 @@ import re
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
-from .aliasing import MaybeAliasedTextChannel
+from ..customizations import Blimp, UnableToComply, Unauthorized
+from .alias import MaybeAliasedTextChannel
 
 
 class Board(Blimp.Cog):
-    """*Building monuments to all your sins.*
-    A Board is a channel that gets any messages that get enough of certain
-    reactions reposted into it. Also known as "starboard" on other, merely
-    land-bound, bots."""
+    "Building monuments to all your sins."
 
     @commands.group()
     async def board(self, ctx: Blimp.Context):
-        "Configure boards in this server."
+        """A Board is a channel that gets any messages that get enough of certain reactions reposted
+        into it. Also known as "starboard" on other, sadly land-bound, bots."""
 
     @commands.command(parent=board)
     async def update(
@@ -29,15 +27,18 @@ class Board(Blimp.Cog):
         post_age_limit: bool = False,
     ):
         """Update a Board, overwriting prior configuration.
-        `emoji` may be any custom or built-in emoji or a literal "any",
-        in which case the repost will trigger for any emoji.
-        `min_reacts` is how many emoji you want the messages to have before
-        they get reposted.
-        `post_age_limit` controls if posts older than the board configuration
-        should be reposted."""
+
+        `emoji` is the reaction the Board listens to, it may be either a custom or built-in emoji,
+        or "any". In the latter case, any emoji can trigger the Board.
+
+        `min_reacts` is how many reactions of `emoji` you want a message to have before it triggers
+        the Board.
+
+        `post_age_limit` controls if posts older than the board configuration should be reposted, by
+        default old posts are ignored."""
 
         if not ctx.privileged_modify(channel.guild):
-            return
+            raise Unauthorized()
 
         emoji_id = re.search(r"(\d{10,})>?$", emoji)
         if emoji_id:
@@ -90,24 +91,19 @@ class Board(Blimp.Cog):
 
     @commands.command(parent=board)
     async def disable(self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel):
-        "Disable a Board, deleting prior configuration."
+        "Disable a Board and delete its configuration."
 
         if not ctx.privileged_modify(channel.guild):
-            return
+            raise Unauthorized()
 
         cursor = ctx.database.execute(
             """DELETE FROM board_configuration WHERE oid=:oid""",
             {"oid": ctx.objects.by_data(tc=channel.id)},
         )
         if cursor.rowcount == 0:
-            await ctx.reply(
-                "*although unthought yet,*\n"
-                "*more frivolous than a Board*\n"
-                "*may be its absence.*",
-                subtitle="No Board is configured in that channel.",
-                color=ctx.Color.I_GUESS,
+            raise UnableToComply(
+                f"Can't disable Board in {channel.mention} as none exists."
             )
-            return
 
         await ctx.bot.post_log(
             channel.guild, f"{ctx.author} deleted board {channel.mention}."

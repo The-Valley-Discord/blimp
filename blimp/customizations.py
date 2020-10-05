@@ -13,6 +13,25 @@ from discord.ext import commands
 from .objects import BlimpObjects
 
 
+class AnticipatedError(Exception):
+    "An error we expected."
+
+
+class UnableToComply(AnticipatedError):
+    "We understood what the user wants, but can't."
+    TEXT = "Unable to comply."
+
+
+class Unauthorized(AnticipatedError):
+    "We understood what the user wants, but they aren't allowed to do it."
+    TEXT = "Unauthorized."
+
+
+class PleaseRestate(AnticipatedError):
+    "We didn't understand what the user wants."
+    TEXT = "Please restate query."
+
+
 class Blimp(commands.Bot):
     """
     Instead of using a prefix like... normal bots, Blimp checks if the first
@@ -56,9 +75,11 @@ class Blimp(commands.Bot):
         async def reply(
             self,
             msg: str = None,
+            title: str = discord.Embed.Empty,
             subtitle: str = None,
             color: Color = Color.GOOD,
             embed: discord.Embed = None,
+            delete_after: float = None,
         ):
             """Helper for sending embedded replies"""
             if not embed:
@@ -72,8 +93,9 @@ class Blimp(commands.Bot):
                         await self.send(
                             "",
                             embed=discord.Embed(
-                                color=color, description=buf
+                                color=color, description=buf, title=title
                             ).set_footer(text=subtitle),
+                            delete_after=delete_after,
                         )
                         buf = ""
                     else:
@@ -82,12 +104,13 @@ class Blimp(commands.Bot):
                 if len(buf) > 0:
                     return await self.send(
                         "",
-                        embed=discord.Embed(color=color, description=buf).set_footer(
-                            text=subtitle
-                        ),
+                        embed=discord.Embed(
+                            color=color, description=buf, title=title
+                        ).set_footer(text=subtitle),
+                        delete_after=delete_after,
                     )
 
-            return await self.send("", embed=embed)
+            return await self.send("", embed=embed, delete_after=delete_after)
 
         def privileged_modify(
             self,
@@ -102,7 +125,7 @@ class Blimp(commands.Bot):
                 return True
 
             kind = subject.__class__
-            if kind == discord.TextChannel or kind == discord.CategoryChannel:
+            if kind in (discord.TextChannel, discord.CategoryChannel):
                 return self.author.permissions_in(subject).manage_messages
             if kind == discord.Member:
                 return self.author.guild_permissions.ban_users

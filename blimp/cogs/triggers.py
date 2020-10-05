@@ -3,17 +3,18 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
-from .aliasing import MaybeAliasedMessage
+from ..customizations import Blimp, Unauthorized, UnableToComply
+from .alias import MaybeAliasedMessage
 
 
 class Triggers(Blimp.Cog):
-    """*The Big Red Button.*
-    Triggers allow your users to invoke pre-set commands by reacting to a specific message."""
+    "The Big Red Button."
 
     @commands.group()
     async def trigger(self, ctx: Blimp.Context):
-        "Manage your server's command triggers."
+        """Triggers allow your users to invoke pre-set commands by reacting to a specific message.
+        BLIMP uses this to allow easy ticket deletion. The possibilities, however, are limitless.
+        Commands are always ran as the user that reacts to the post."""
 
     @commands.command(parent=trigger)
     async def update(
@@ -21,10 +22,15 @@ class Triggers(Blimp.Cog):
     ):
         """
         Update a trigger, overwriting its setup entirely.
-        """
+
+        `msg` is the message a trigger should be created/edited on.
+
+        `emoji` is the reaction the trigger should be sensitive to.
+
+        `command` is the command to execute when the reaction is used."""
 
         if not ctx.privileged_modify(msg.guild):
-            return
+            raise Unauthorized()
 
         log_embed = discord.Embed(
             description=f"{ctx.author} updated "
@@ -71,10 +77,14 @@ class Triggers(Blimp.Cog):
 
     @commands.command(parent=trigger)
     async def delete(self, ctx: Blimp.Context, msg: MaybeAliasedMessage, emoji: str):
-        "Delete a trigger (but not the message)."
+        """Delete a trigger, but not the message.
+
+        `msg` is the message to delete a trigger on.
+
+        `emoji` is the reaction BLIMP should no longer consider a trigger."""
 
         if not ctx.privileged_modify(msg.guild):
-            return
+            raise Unauthorized()
 
         cursor = ctx.database.execute(
             "DELETE FROM trigger_entries WHERE message_oid=:message_oid AND emoji=:emoji",
@@ -84,12 +94,9 @@ class Triggers(Blimp.Cog):
             },
         )
         if cursor.rowcount == 0:
-            await ctx.reply(
-                "*trying to comply*\n"
-                "*I searched all the kiosks known*\n"
-                "*that one's still foreign*",
-                subtitle="That message isn't a role kiosk.",
-                color=ctx.Color.I_GUESS,
+            raise UnableToComply(
+                f"Can't delete trigger [trigger {emoji} in #{msg.channel.name}]({msg.jump_url}) "
+                "as it doesn't exist."
             )
 
         await msg.remove_reaction(emoji, ctx.guild.me)

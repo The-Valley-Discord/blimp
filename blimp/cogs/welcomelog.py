@@ -5,20 +5,13 @@ import discord
 from discord.ext import commands
 import toml
 
-from ..customizations import Blimp
-from .aliasing import MaybeAliasedTextChannel
+from ..customizations import Blimp, Unauthorized, UnableToComply
+from .alias import MaybeAliasedTextChannel
 from ..message_formatter import create_message_dict
 
 
 class WelcomeLog(Blimp.Cog):
-    """*Greeting and goodbye-ing people.*
-    Welcome and Goodbye allow you to greet and see off users that join/leave
-    your server. The messages allow you to mention the user in question, but
-    don't offer a lot of detail a proper logging bot would provide, mostly
-    because that's a different use case.
-    Inside greeting texts, the following variables are available: `$user`
-    mentions the member, `$id` is their ID, `$tag` is their DiscordTag#1234,
-    and `$avatar` is their avatar."""
+    "Greeting and goodbye-ing people."
 
     @staticmethod
     def member_variables(member: discord.Member) -> dict:
@@ -32,7 +25,15 @@ class WelcomeLog(Blimp.Cog):
 
     @commands.group()
     async def welcome(self, ctx: Blimp.Context):
-        "Configure user-facing join notifications."
+        """Welcome allows you to greet users that join your server. The automated greeting is highly
+        flexible, but probably unsuitable for security purposes. For that you probably want a
+        dedicated logging bot!
+
+        Inside greeting texts, the following **variables** are available: `$user` mentions the
+        member, `$id` is their ID, `$tag` is their DiscordTag#1234, and `$avatar` is their avatar.
+        [Advanced Message Formatting]($manual#advanced-message-formatting) is available in
+        greetings.
+        """
 
     @commands.command(parent=welcome, name="update")
     async def w_update(
@@ -40,10 +41,13 @@ class WelcomeLog(Blimp.Cog):
     ):
         """Update user-facing join messages for this server.
 
-        `channel` designates where the messages will be posted.
-        In `greeting`, $user is replaced with a mention of the user joining."""
+        `channel` is the channel where join greetings will be posted.
+
+        `greeting` is the text of the greeting messages. [Advanced Message
+        Formatting]($manual#advanced-message-formatting) is available."""
+
         if not ctx.privileged_modify(channel.guild):
-            return
+            raise Unauthorized()
 
         logging_embed = discord.Embed(
             description=f"{ctx.author} updated Welcome.", color=ctx.Color.I_GUESS
@@ -86,22 +90,19 @@ class WelcomeLog(Blimp.Cog):
 
     @commands.command(parent=welcome, name="disable")
     async def w_disable(self, ctx: Blimp.Context):
-        "Disable the server's welcome messages and delete stored data."
+        "Disable the server's welcome greetings and delete the configuration."
+
         if not ctx.privileged_modify(ctx.guild):
-            return
+            raise Unauthorized()
+
         cursor = ctx.database.execute(
             "UPDATE welcome_configuration SET join_data=NULL WHERE oid=:oid",
             {"oid": ctx.objects.make_object(g=ctx.guild.id)},
         )
         if cursor.rowcount == 0:
-            await ctx.reply(
-                """*I, yet again tasked*
-                *to erase what doesn't exist,*
-                *quietly ignore.*""",
-                subtitle="Welcome is not enabled for this server.",
-                color=ctx.Color.I_GUESS,
+            raise UnableToComply(
+                "Can't delete Welcome configuration as it doesn't exist."
             )
-            return
 
         await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Welcome.")
 
@@ -109,9 +110,8 @@ class WelcomeLog(Blimp.Cog):
 
     @Blimp.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        """
-        Look up if we have a configuration for this guild and greet if so.
-        """
+        "Look up if we have a configuration for this guild and greet if so."
+
         objects = self.bot.objects
 
         cursor = self.bot.database.execute(
@@ -133,7 +133,15 @@ class WelcomeLog(Blimp.Cog):
 
     @commands.group()
     async def goodbye(self, ctx: Blimp.Context):
-        "Configure user-facing leave notifications."
+        """Goodbye allows you to see off users that leave your server. The automated goodbye is
+        highly flexible, but probably unsuitable for security purposes. For that you probably want a
+        dedicated logging bot!
+
+        Inside goodbye messages, the following **variables** are available: `$user` mentions the
+        member, `$id` is their ID, `$tag` is their DiscordTag#1234, and `$avatar` is their avatar.
+        [Advanced Message Formatting]($manual#advanced-message-formatting) is available in
+        goodbye messages.
+        """
 
     @commands.command(parent=goodbye, name="update")
     async def g_update(
@@ -141,10 +149,13 @@ class WelcomeLog(Blimp.Cog):
     ):
         """Update user-facing leave messages for this server.
 
-        `channel` designates where the messages will be posted.
-        In `greeting`, $user is replaced with a mention of the user leaving."""
+        `channel` is the channel where goodbye messages will be posted.
+
+        `greeting` is the text of the goodbye messages. [Advanced Message
+        Formatting]($manual#advanced-message-formatting) is available."""
+
         if not ctx.privileged_modify(channel.guild):
-            return
+            raise Unauthorized()
 
         logging_embed = discord.Embed(
             description=f"{ctx.author} updated Goodbye.", color=ctx.Color.I_GUESS
@@ -187,22 +198,19 @@ class WelcomeLog(Blimp.Cog):
 
     @commands.command(parent=goodbye, name="disable")
     async def g_disable(self, ctx: Blimp.Context):
-        "Disable the server's goodbye messages and delete stored data."
+        "Disable the server's goodbye messages and delete the configuration."
+
         if not ctx.privileged_modify(ctx.guild):
-            return
+            raise Unauthorized()
+
         cursor = ctx.database.execute(
             "UPDATE welcome_configuration SET leave_data=NULL WHERE oid=:oid",
             {"oid": ctx.objects.make_object(g=ctx.guild.id)},
         )
         if cursor.rowcount == 0:
-            await ctx.reply(
-                """*heartbroken, ordered*
-                *to remove a farewell, joy*
-                *as I can refuse.*""",
-                subtitle="Goodbye is not enabled for this server.",
-                color=ctx.Color.I_GUESS,
+            raise UnableToComply(
+                "Can't delete Goodbye configuration as it doesn't exist."
             )
-            return
 
         await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Goodbye.")
 

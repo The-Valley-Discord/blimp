@@ -4,12 +4,14 @@ Actually the interesting file, init code lives here
 
 from configparser import ConfigParser
 import logging
+import re
+from string import Template
 from typing import Optional
 
 import discord
 from discord.ext import commands
 
-from .customizations import Blimp
+from .customizations import Blimp, PleaseRestate, AnticipatedError, Unauthorized
 from . import cogs
 
 
@@ -24,42 +26,64 @@ for source in config["log"]["suppress"].split(","):
         lambda row: row.levelno > getattr(logging, config["log"]["level"])
     )
 
+intents = discord.Intents.default()
+intents.members = True
+
 bot = Blimp(
     config,
     case_insensitive=True,
     activity=Blimp.random_status(),
     help_command=None,
+    intents=intents,
 )
 for cog in [
-    cogs.Aliasing,
+    cogs.Alias,
     cogs.Board,
-    cogs.BotLog,
-    cogs.LongSlowmode,
+    cogs.Logging,
+    cogs.Slowmode,
     cogs.Malarkey,
     cogs.Moderation,
     cogs.Tickets,
     cogs.Tools,
     cogs.Triggers,
     cogs.WelcomeLog,
-    cogs.RoleKiosk,
+    cogs.Kiosk,
 ]:
     bot.add_cog(cog(bot))
 
 
+def process_docstrings(text) -> str:
+    "Turn a raw function docstring into a help text for display"
+    return re.sub(
+        r"(.+)\n *",
+        r"\1 ",
+        Template(text).safe_substitute(
+            {
+                "manual": bot.config["info"]["manual"],
+                "sfx": bot.config["discord"]["suffix"],
+            }
+        ),
+    )
+
+
+once_lock = False
+
+
 @bot.event
 async def on_ready():
-    """Hello world."""
+    "Hello world."
     bot.log.info(f"Logged in as {bot.user}")
 
-    bot.add_cog(cogs.Reminders(bot))
-    bot.owner_id = (await bot.application_info()).owner.id
+    global once_lock
+    if not once_lock:
+        bot.add_cog(cogs.Reminders(bot))
+        bot.owner_id = (await bot.application_info()).owner.id
 
-    # we can't use fstrings in docstrings, so insert the manual link manually here
-    post_command = [c for c in bot.commands if c.name[:-1] == "post"][0]
-    post_command.help = post_command.help.replace(
-        "MANUALLINKHERE",
-        f"[extended message formatting]({bot.config['info']['manual']}#extended-post-format)",
-    )
+        # inserting runtime data into help
+        for command in bot.walk_commands():
+            command.help = process_docstrings(command.help)
+
+        once_lock = True
 
 
 @bot.command(name="help")
@@ -74,66 +98,51 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
         return out
 
     embed = discord.Embed(color=ctx.Color.I_GUESS, title="BLIMP Manual")
+
     if not subject:
-        embed.description = (
-            f"This is the *[BLIMP]({ctx.bot.config['info']['web']}) "
-            "Levitating Intercommunication Management Programme*, a management "
-            f"bot for Discord.\nFor detailed help, use `{signature(_help)}` "
-            "with individual commands or any of the larger features "
-            "listed below. There's also an [online manual]"
-            f"({ctx.bot.config['info']['manual']}) and, of course, the [source "
-            f"code]({ctx.bot.config['info']['source']}).\n\n"
+        embed.description = process_docstrings(
+            f"""This is the *[BLIMP]({ctx.bot.config['info']['web']}) Levitating Intercommunication
+            Management Programme*, a general-purpose management bot for Discord.
+
+
+            For detailed help on any command, you can use `{signature(_help)}`. You may also find
+            useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
+            is [open-source]({ctx.bot.config['info']['source']}). This instance is running on
+            {len(ctx.bot.guilds)} servers with {len(ctx.bot.users)} members."""
         )
 
-        for name, cog in sorted(  # pylint: disable=redefined-outer-name
-            ctx.bot.cogs.items(), key=lambda tup: tup[0]
-        ):
-            all_commands = []
-            for command in cog.get_commands():
-                if isinstance(command, commands.Group):
-                    all_commands.extend(
-                        [f"`{command.name} {sub.name}`" for sub in command.commands]
-                    )
+        all_commands = ""
+        standalone_commands = ""
+        previous_group = None
+        for cmd in sorted(ctx.bot.walk_commands(), key=lambda x: x.qualified_name):
+            if cmd.__class__ == commands.Command:
+                if not cmd.parent:
+                    standalone_commands += f"`{cmd.qualified_name}` "
                 else:
-                    all_commands.append(f"`{command.name}`")
+                    if previous_group != cmd.parent:
+                        all_commands += f"\n**`{cmd.parent.name}`** "
+                    all_commands += f"`{cmd.name}` "
 
-            embed.description += (
-                f"**{name}** "
-                + cog.description.split("\n")[0]
-                + "\n"
-                + " ".join(all_commands)
-                + "\n\n"
-            )
+                previous_group = cmd.parent
+
+        embed.add_field(
+            name="All Commands", value=standalone_commands + "\n" + all_commands
+        )
+
     else:
-        for name, cog in ctx.bot.cogs.items():
-            if subject.casefold() == name.casefold():
-                field = ""
-                for command in cog.get_commands():
-                    field += "\n"
-                    if isinstance(command, commands.Group):
-                        field += "\n".join(
-                            [
-                                f"{signature(sub)}\n{sub.short_doc}"
-                                for sub in command.commands
-                            ]
-                        )
-                    else:
-                        field += f"{signature(command)}\n{command.short_doc}\n"
-                embed.add_field(
-                    name=f"Feature: {name}",
-                    value=cog.description + "\n" + field,
-                    inline=False,
-                )
         for command in ctx.bot.walk_commands():
             if subject.casefold() in (
                 command.qualified_name.casefold(),
                 command.qualified_name.replace(ctx.bot.suffix, "").casefold(),
             ):
-                embed.add_field(
-                    name=f"Command: {signature(command)}",
-                    value=command.help,
-                    inline=False,
-                )
+                embed.title = signature(command)
+                embed.description = command.help
+
+                if command.__class__ == commands.Group:
+                    embed.description += "\n\n" + "\n\n".join(
+                        signature(sub) + "\n" + sub.help.split("\n")[0]
+                        for sub in command.commands
+                    )
 
     await ctx.send(None, embed=embed)
 
@@ -144,25 +153,32 @@ async def on_command_error(ctx, error):
     Handle errors, delegating all "internal errors" (exceptions foreign to
     discordpy) to stderr and discordpy (i.e. high-level) errors to the user.
     """
-    if isinstance(error, commands.CommandInvokeError):
+    if isinstance(error, commands.CommandInvokeError) and isinstance(
+        error.original, AnticipatedError
+    ):
+        original = error.original
+        await ctx.reply(
+            str(original),
+            title=original.TEXT,
+            color=ctx.Color.BAD,
+            delete_after=5.0 if isinstance(original, Unauthorized) else None,
+        )
+        return
+    elif isinstance(error, commands.UserInputError):
+        await ctx.reply(
+            str(error),
+            title=PleaseRestate.TEXT,
+            color=ctx.Color.BAD,
+        )
+        return
+    elif isinstance(error, commands.CommandNotFound):
+        return
+    else:
         ctx.log.error(
             f"Encountered exception during executing {ctx.command}", exc_info=error
         )
         await ctx.reply(
-            "*soon questions arise:*\n"
-            "*me unwilling, what did you*\n"
-            "*want in the first place?*",
-            subtitle="Internal Error.",
-            color=ctx.Color.BAD,
-        )
-    elif isinstance(error, commands.CommandNotFound):
-        return
-    else:
-        await ctx.reply(
-            "*here's news, good and bad:*\n"
-            "*the bad, something clearly broke.*\n"
-            "*the good? not my fault.*",
-            subtitle=f"Error: {error}",
+            title="Unable to comply, internal error.",
             color=ctx.Color.BAD,
         )
 

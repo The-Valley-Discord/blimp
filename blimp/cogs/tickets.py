@@ -6,20 +6,24 @@ import discord
 from discord.ext import commands
 import toml
 
-from .aliasing import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
+from .alias import (
+    MaybeAliasedCategoryChannel,
+    MaybeAliasedTextChannel,
+    Unauthorized,
+)
 from ..customizations import Blimp
 from ..transcript import Transcript
 from ..message_formatter import create_message_dict
 
 
 class Tickets(Blimp.Cog):
-    """*Honorary citizen #23687, please! Don't push.*
-    Tickets allow users to create temporary channels to, for example, request assistance, talk to
-    moderators privately, or organize internal discussions."""
+    "Honorary citizen #23687, please! Don't push."
 
     @commands.group()
     async def ticket(self, ctx: Blimp.Context):
-        "Manage individual tickets and overall ticket configuration."
+        """Tickets are temporary private channels created by a user to, for example, request
+        assistance, talk to moderators privately, or organize internal discussions. They are
+        automatically archived into an easily-readable format on deletion."""
 
     @commands.command(parent=ticket)
     async def updatecategory(
@@ -31,10 +35,24 @@ class Tickets(Blimp.Cog):
         can_creator_close: bool,
         per_user_limit: Optional[int],
     ):
-        "Update a Ticket category, overwriting its setup entirely."
+        """Update a Ticket category, overwriting its setup entirely.
+
+        `category` is the channel category to edit. New Tickets are created inside of it.
+
+        `last_ticket_number` is the number of the last ticket. If you're creating a new category,
+        you probably want to set this to `0`.
+
+        `transcript_channel` is the channel where BLIMP will post transcripts of deleted Tickets.
+        These include a full conversation transcript rendered as HTML and some statistics.
+
+        `can_creator_close` determines if the creator of a ticket should be allowed to delete it.
+        Depending on your use case, this may not be desirable.
+
+        `per_user_limit` is an optional maximum number of Tickets a single unprivileged user can
+        have in this category. If they exceed it, BLIMP will refuse to open further Tickets."""
 
         if not ctx.privileged_modify(category.guild):
-            return
+            raise Unauthorized()
 
         log_embed = discord.Embed(
             description=f"{ctx.author} updated ticket category {category.name}",
@@ -95,10 +113,17 @@ class Tickets(Blimp.Cog):
         *,
         description: str,
     ):
-        "Update a Ticket class, overwriting its setup entirely."
+        """Update a Ticket class, overwriting its setup entirely.
+
+        `category` is the channel category whose Ticket Classes you want to edit.
+
+        `name` is both the identifier of this class and the inital prefix of ticket channels.
+
+        `description` is text that gets automatically posted into a new ticket in this category.
+        [Advanced Message Formatting]($manual#advanced-message-formatting) is available."""
 
         if not ctx.privileged_modify(category.guild):
-            return
+            raise Unauthorized()
 
         log_embed = discord.Embed(
             description=f"{ctx.author} updated ticket class {category.name}/{name}",
@@ -147,9 +172,12 @@ class Tickets(Blimp.Cog):
         category: MaybeAliasedCategoryChannel,
         ticket_class: Optional[str],
     ):
-        """Open a new ticket in the specified category.
+        """Open a new ticket.
 
-        [ticket_class] can be left out if only one class exists in that category."""
+        `category` is the channel category to open a ticket in.
+
+        `ticket_class` is the class the new ticket should have. If the category only has one, this
+        can be left out."""
 
         with ctx.database as trans:
             ticket_category = trans.execute(
@@ -187,7 +215,10 @@ class Tickets(Blimp.Cog):
                     },
                 ).fetchone()
                 if count[0] >= ticket_category["per_user_limit"]:
-                    return
+                    raise Unauthorized(
+                        f"You can only open {ticket_category['per_user_limit']} tickets in this"
+                        "category at once."
+                    )
 
             ticket_channel = await category.create_text_channel(
                 f"{actual_class['name']}-{(ticket_category['count'] + 1)}",
@@ -270,7 +301,9 @@ class Tickets(Blimp.Cog):
         ctx: Blimp.Context,
         channel: Optional[MaybeAliasedTextChannel],
     ):
-        """Delete a ticket and post a transcript."""
+        """Delete a ticket and create a transcript.
+
+        `channel` is the ticket to delete. If left empty, BLIMP works with the current channel."""
 
         if not channel:
             channel = ctx.channel
@@ -291,7 +324,11 @@ class Tickets(Blimp.Cog):
             ctx.privileged_modify(channel)
             or (category["can_creator_close"] and ctx.author.id == ticket["creator_id"])
         ):
-            return
+            raise Unauthorized(
+                "Only Staff "
+                + ("and the ticket owner " if category["can_creator_close"] else "")
+                + "can close this ticket."
+            )
 
         await ctx.reply("Saving transcript…")
         transcript_channel_obj = ctx.objects.by_oid(category["transcript_channel_oid"])
@@ -321,7 +358,7 @@ class Tickets(Blimp.Cog):
             messages = await Transcript.write_transcript(temp, channel)
             temp.seek(0)
 
-            participants = set([message.author for message in messages])
+            participants = {message.author for message in messages}
             archive_embed.add_field(
                 name="Participants",
                 value="\n".join(user.mention for user in participants),
@@ -363,7 +400,13 @@ class Tickets(Blimp.Cog):
         channel: Optional[MaybeAliasedTextChannel],
         members: commands.Greedy[discord.Member],
     ):
-        "Add members to a ticket."
+        """Add members to a ticket.
+
+        `channel` is the ticket to add members to. If left empty, BLIMP works with the current
+        channel.
+
+        `members` is a list of members that you want to add."""
+
         if not channel:
             channel = ctx.channel
 
@@ -377,7 +420,7 @@ class Tickets(Blimp.Cog):
         if not (
             ctx.privileged_modify(channel) or ctx.author.id == ticket["creator_id"]
         ):
-            return
+            raise Unauthorized("Only Staff and the ticket owner can add members.")
 
         member_text = " ".join([member.mention for member in members])
         await ctx.bot.post_log(
@@ -411,7 +454,13 @@ class Tickets(Blimp.Cog):
         channel: Optional[MaybeAliasedTextChannel],
         members: commands.Greedy[discord.Member],
     ):
-        "Remove members from a ticket."
+        """Remove members from a ticket.
+
+        `channel` is the ticket to remove members from. If left empty, BLIMP works with the current
+        channel.
+
+        `members` is a list of members that you want to remove."""
+
         if not channel:
             channel = ctx.channel
 
@@ -425,7 +474,7 @@ class Tickets(Blimp.Cog):
         if not (
             ctx.privileged_modify(channel) or ctx.author.id == ticket["creator_id"]
         ):
-            return
+            raise Unauthorized("Only Staff and the ticket owner can remove members.")
 
         member_text = " ".join([member.mention for member in members])
         await ctx.bot.post_log(

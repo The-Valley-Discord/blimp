@@ -5,14 +5,16 @@ from typing import Union, Optional
 import discord
 from discord.ext import commands, tasks
 
-from ..customizations import Blimp, ParseableDatetime, ParseableTimedelta
+from ..customizations import (
+    Blimp,
+    ParseableDatetime,
+    ParseableTimedelta,
+    UnableToComply,
+)
 
 
 class Reminders(Blimp.Cog):
-    """*Reminding you of things that you believe are going to happen.*
-    Reminders allow you to set notifications for a future self. When the time
-    comes, BLIMP will ping you with a text you set and a link to the original
-    message."""
+    "Reminding you of things that you believe are going to happen."
 
     def __init__(self, *args):
         self.execute_reminders.start()  # pylint: disable=no-member
@@ -74,25 +76,23 @@ class Reminders(Blimp.Cog):
                 )
 
     @commands.group()
-    async def reminder(self, ctx: Blimp.Context):
-        "Manage timed reminders."
+    async def reminders(self, ctx: Blimp.Context):
+        """Reminders allow you to set notifications for a future self. When the time comes, BLIMP
+        will ping you with a text you set and a link to the original message.
 
-    @commands.command(parent=reminder, name="list")
+        **You can create reminders using `remindme$sfx`**"""
+
+    @commands.command(parent=reminders, name="list")
     async def _list(self, ctx: Blimp.Context):
-        "List all pending reminders for you."
+        "List all pending reminders for you in DMs."
+
         rems = ctx.database.execute(
             "SELECT * FROM reminders_entries WHERE user_id=:user_id",
             {"user_id": ctx.author.id},
         ).fetchall()
 
         if not rems:
-            await ctx.reply(
-                "*here? nothing. bleak, yet*\n"
-                "*lacking future's burdens*\n"
-                "*maybe you are free.*",
-                subtitle="You have no pending reminders.",
-                color=ctx.Color.I_GUESS,
-            )
+            await ctx.reply("You have no pending reminders.", color=ctx.Color.I_GUESS)
             return
 
         rows = []
@@ -104,25 +104,22 @@ class Reminders(Blimp.Cog):
             delta = delta - timedelta(microseconds=delta.microseconds)
             rows.append(f"#{rem['id']} **{delta} ({invoke_link})**\n{rem['text']}")
 
-        await ctx.reply("\n".join(rows))
+        await Blimp.Context.reply(ctx.author, "\n".join(rows))
 
-    @commands.command(parent=reminder)
+    @commands.command(parent=reminders)
     async def delete(self, ctx: Blimp.Context, number: int):
-        "Delete one of your reminders."
+        """Delete one of your reminders.
+
+        `number` is the number listed first in a `reminders$sfx list` row."""
 
         old = ctx.database.execute(
             "SELECT * FROM reminders_entries WHERE user_id=:user_id AND id=:id",
             {"user_id": ctx.author.id, "id": number},
         ).fetchone()
         if not old:
-            await ctx.reply(
-                "*set to erase one*\n"
-                "*I poured through all records*\n"
-                "*yet the hunt proved fruitless.*",
-                subtitle="Error: Unknown reminder ID.",
-                color=ctx.Color.I_GUESS,
+            raise UnableToComply(
+                f"Can't delete your reminder #{number} as it doesn't exist."
             )
-            return
 
         ctx.database.execute(
             "DELETE FROM reminders_entries WHERE user_id=:user_id AND id=:id",
@@ -141,10 +138,14 @@ class Reminders(Blimp.Cog):
     ):
         """Add a timed reminder for yourself.
 
-        `when` may be a timestamp in ISO 8601 format ("YYYY-MM-DD HH:MM:SS") or
-        a delta from now, like "90 days" or 1h or "1 minute 30secs".
-        You will be reminded either in this channel or via DM if the channel is
-        no longer reachable."""
+        `when` can be either a [duration]($manual#arguments) from now or a [time
+        stamp]($manual#arguments). Either way, it determines when the reminder will fire.
+
+        `text` is your reminder text. You can leave this empty.
+
+        You will be reminded either in the channel where the command was issued or via DM if that
+        channel is no longer reachable."""
+
         due = None
         if isinstance(when, datetime):
             due = when.replace(microsecond=0)
@@ -161,14 +162,7 @@ class Reminders(Blimp.Cog):
             text = "[no reminder text provided]"
 
         if due < datetime.now(timezone.utc):
-            await ctx.reply(
-                "*tempting as it seems*\n"
-                "*it's best not to venture there*\n"
-                "*let the past lie dead.*",
-                subtitle="You can't set reminders for past events.",
-                color=ctx.Color.I_GUESS,
-            )
-            return
+            raise UnableToComply("You can't set reminders for past events.")
 
         cursor = ctx.database.execute(
             """INSERT INTO reminders_entries(user_id, message_oid, due, text)

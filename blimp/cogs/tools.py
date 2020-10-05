@@ -5,8 +5,8 @@ import discord
 from discord.ext import commands
 import toml
 
-from ..customizations import Blimp, ParseableTimedelta
-from .aliasing import (
+from ..customizations import Blimp, ParseableTimedelta, Unauthorized
+from .alias import (
     MaybeAliasedCategoryChannel,
     MaybeAliasedTextChannel,
     MaybeAliasedMessage,
@@ -15,19 +15,18 @@ from ..message_formatter import create_message_dict
 
 
 class Tools(Blimp.Cog):
-    """*Semi-useful things, actually.*
-    This is a collection of commands that relate to everyday management
-    and aren't significant enough to warrant their own module."""
+    "Semi-useful things, actually."
 
     @commands.command()
     async def cleanup(self, ctx: Blimp.Context, limit: int = 20, any_bot: bool = False):
         """Go through the last messages and delete bot responses.
 
         `limit` controls the amount of messages searched, the default is 20.
-        If `any_bot` is provided, will clear messages by any bot and not
-        just BLIMP's."""
+
+        `any_bot` determines if only BLIMP's (the default) or all bots' messages are cleared."""
+
         if not ctx.privileged_modify(ctx.channel):
-            return
+            raise Unauthorized()
 
         async with ctx.typing():
             purged = await ctx.channel.purge(
@@ -50,7 +49,13 @@ class Tools(Blimp.Cog):
         category: MaybeAliasedCategoryChannel,
         duration: ParseableTimedelta = ParseableTimedelta(days=2),
     ):
-        "List channels in a category that have been stale for a certain duration."
+        """List channels haven't been for a certain duration.
+
+        `category` is the channel category that should be inspected.
+
+        `duration` is a [duration]($manual#arguments). Channels that haven't received any messages
+        during this time are considered stale and will be printed. Defaults to two days."""
+
         channels = []
         for channel in category.channels:
             if (
@@ -77,7 +82,8 @@ class Tools(Blimp.Cog):
     @commands.command()
     @commands.is_owner()
     async def eval(self, ctx: Blimp.Context, *, code: str):
-        "Evaluate an expression as a lambda."
+        "Parse an expression as a lambda and apply it to the Context. No, you can't use this."
+
         the_letter_after_kappa = eval(code)  # pylint: disable=eval-used
         await the_letter_after_kappa(ctx)
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
@@ -86,7 +92,10 @@ class Tools(Blimp.Cog):
     async def pleasetellmehowmanypeoplehave(
         self, ctx: Blimp.Context, role: discord.Role
     ):
-        "Show how many members have a certain role."
+        """Show how many members have a certain role.
+
+        `role` is the role whose members should be counted."""
+
         members = [m for m in ctx.guild.members if role in m.roles]
         await ctx.reply(f"{len(members)} members have {role.mention}.")
 
@@ -98,12 +107,17 @@ class Tools(Blimp.Cog):
         *,
         text: str,
     ):
-        "Set the description of a channel."
+        """Set the description of a channel.
+
+        `channel` is the channel to edit. If left empty, BLIMP works with the current channel.
+
+        `text` is the new description of the channel. Standard Discord formatting works."""
+
         if not channel:
             channel = ctx.channel
 
         if not ctx.privileged_modify(channel):
-            return
+            raise Unauthorized()
 
         log_embed = (
             discord.Embed(
@@ -127,12 +141,17 @@ class Tools(Blimp.Cog):
         *,
         text: str,
     ):
-        "Set the name of a channel."
+        """Set the name of a channel.
+
+        `channel` is the channel to edit. If left empty, BLIMP works with the current channel.
+
+        `text` is the new name of the channel."""
+
         if not channel:
             channel = ctx.channel
 
         if not ctx.privileged_modify(channel):
-            return
+            raise Unauthorized()
 
         log_embed = (
             discord.Embed(
@@ -156,13 +175,15 @@ class Tools(Blimp.Cog):
         *,
         text: str,
     ):
-        """Make the bot post something.
+        """Make BLIMP post something on your behalf.
 
-        <where> may be a channel or a message created by this command to update.
-        <text> may be either plain text for the message content or TOML data for MANUALLINKHERE."""
+        `where` is either a channel to post in, or a previous `post$sfx`-created message to edit.
+
+        `text` is the new content of the message. [Advanced Message
+        Formatting]($manual#advanced-message-formatting) is available."""
 
         if not ctx.privileged_modify(where.guild):
-            return
+            raise Unauthorized()
 
         try:
             text = toml.dumps(toml.loads(text))

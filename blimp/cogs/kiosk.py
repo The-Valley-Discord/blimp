@@ -4,21 +4,19 @@ from typing import List, Union
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import UserInputError
 
 from ..customizations import Blimp
-from .aliasing import MaybeAliasedMessage
+from .alias import MaybeAliasedMessage
 
 
-class RoleKiosk(Blimp.Cog):
-    """*Handing out fancy badges.*
-    Role Kiosks allow you to have members assign roles to themselves
-    by reacting to a message with emoji. To modify role kiosks, you both
-    need to be able to manage the server and all roles you want to offer."""
+class Kiosk(Blimp.Cog):
+    "Handing out fancy badges."
 
     @commands.group()
     async def kiosk(self, ctx: Blimp.Context):
-        "Manage your server's role kiosks."
+        """Kiosks allow users to pick roles by reacting to specific messages with certain reactions.
+        This is frequently used for pronouns, ping roles, opt-ins or colors. Every Kiosk has its own
+        set of reaction-role pairings."""
 
     @staticmethod
     def parse_emoji_pairs(args: List[Union[discord.Role, str]]):
@@ -45,10 +43,10 @@ class RoleKiosk(Blimp.Cog):
     ):
         """
         Update a role kiosk, overwriting its setup entirely.
-        Target doesn't have to be a kiosk prior to issuing this command.
 
-        [args] means: :emoji1: @Role1 :emoji2: @Role2 :emojiN: @RoleN
-        Up to 20 pairs per message, due to Discord limitations.
+        `args` is a space-separated list of one emoji each followed by one role. This determines the
+        options the kiosk will have available. Due to Discord limitations, only 20 pairs are
+        possible per message.
         """
 
         if not ctx.privileged_modify(msg.guild):
@@ -57,9 +55,18 @@ class RoleKiosk(Blimp.Cog):
         result = self.parse_emoji_pairs(args)
 
         if len(result) == 0:
-            raise UserInputError("Expected arguments :emoji: role :emoji: role...")
+            await ctx.reply(
+                "**Please restate query:** No valid reaction-role pairings found.",
+                color=ctx.Color.BAD,
+            )
+            return
+
         if len(result) > 20:
-            raise UserInputError("Can't use more than 20 reactions per kiosk.")
+            await ctx.reply(
+                "**Unable to comply:** Can't use more than 20 reaction-role pairs per message.",
+                color=ctx.Color.BAD,
+            )
+            return
 
         user_failed_roles = []
         bot_failed_roles = []
@@ -71,22 +78,16 @@ class RoleKiosk(Blimp.Cog):
 
         if user_failed_roles:
             await ctx.reply(
-                "*how promethean,*\n"
-                "*gifting roles you don't control.*"
-                "*yet I must decline.*",
-                subtitle="You can't manage these roles: "
-                + " ".join([r.name for r in user_failed_roles]),
+                "**Unauthorized:** You can't modify the following roles: "
+                + " ".join([r.mention for r in user_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
 
         if bot_failed_roles:
             await ctx.reply(
-                "*despite best efforts,*\n"
-                "*this kiosk is doomed to fail,*\n"
-                "*its roles beyond me.*",
-                subtitle="The bot can't manage these roles: "
-                + " ".join([r.name for r in bot_failed_roles]),
+                "**Unable to comply:** BLIMP can't modify the following roles: "
+                + " ".join([r.mention for r in bot_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
@@ -151,10 +152,11 @@ class RoleKiosk(Blimp.Cog):
         args: commands.Greedy[Union[discord.Role, str]],
     ):
         """
-        Update a kiosk, appending options to it. Prior configuration will remain intact.
+        Update a kiosk, appending options to it instead of overwriting.
 
-        [args] means: :emoji1: @Role1 :emoji2: @Role2 :emojiN: @RoleN
-        Up to 20 pairs per message, due to Discord limitations.
+        `args` is a space-separated list of one emoji each followed by one role. This determines the
+        options the kiosk will have available. Due to Discord limitations, only 20 pairs are
+        possible per message.
         """
 
         if not ctx.privileged_modify(msg.guild):
@@ -167,11 +169,10 @@ class RoleKiosk(Blimp.Cog):
 
         if not old:
             await ctx.reply(
-                "*quick, concatenate!*\n"
-                "*you demand. nought to add to*\n"
-                "*ah, I feel distressed*",
+                "**Unable to comply:** Message isn't a kiosk yet. Create one using `kiosk"
+                + ctx.bot.config["discord"]["suffix"]
+                + " update` first.",
                 color=ctx.Color.BAD,
-                subtitle="This kiosk doesn't exist yet. Use kiosk! update to create one.",
             )
             return
 
@@ -180,9 +181,18 @@ class RoleKiosk(Blimp.Cog):
         result = self.parse_emoji_pairs(args)
 
         if len(result + old_data) == 0:
-            raise UserInputError("Expected arguments :emoji: role :emoji: role...")
+            await ctx.reply(
+                "**Please restate query:** No valid reaction-role pairings found.",
+                color=ctx.Color.BAD,
+            )
+            return
+
         if len(result + old_data) > 20:
-            raise UserInputError("Can't use more than 20 reactions per kiosk.")
+            await ctx.reply(
+                "**Unable to comply:** Can't use more than 20 reaction-role pairs per message.",
+                color=ctx.Color.BAD,
+            )
+            return
 
         user_failed_roles = []
         bot_failed_roles = []
@@ -194,22 +204,16 @@ class RoleKiosk(Blimp.Cog):
 
         if user_failed_roles:
             await ctx.reply(
-                "*how promethean,*\n"
-                "*gifting roles you don't control.*"
-                "*yet I must decline.*",
-                subtitle="You can't manage these roles: "
-                + " ".join([r.name for r in user_failed_roles]),
+                "**Unauthorized:** You can't modify the following roles: "
+                + " ".join([r.mention for r in user_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
 
         if bot_failed_roles:
             await ctx.reply(
-                "*despite best efforts,*\n"
-                "*this kiosk is doomed to fail,*\n"
-                "*its roles beyond me.*",
-                subtitle="The bot can't manage these roles: "
-                + " ".join([r.name for r in bot_failed_roles]),
+                "**Unable to comply:** BLIMP can't modify the following roles: "
+                + " ".join([r.mention for r in bot_failed_roles]),
                 color=ctx.Color.BAD,
             )
             return
@@ -275,12 +279,10 @@ class RoleKiosk(Blimp.Cog):
         )
         if cursor.rowcount == 0:
             await ctx.reply(
-                "*trying to comply*\n"
-                "*I searched all the kiosks known*\n"
-                "*that one's still foreign*",
-                subtitle="That message isn't a role kiosk.",
-                color=ctx.Color.I_GUESS,
+                "**Unable to comply:** Can't delete kiosk as it doesn't exist.",
+                color=ctx.Color.BAD,
             )
+            return
 
         for emoji in [item for item in msg.reactions if item.me]:
             await msg.remove_reaction(emoji.emoji, ctx.guild.me)

@@ -4,17 +4,18 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp, ParseableTimedelta
-from .aliasing import MaybeAliasedTextChannel
+from ..customizations import Blimp, ParseableTimedelta, Unauthorized
+from .alias import MaybeAliasedTextChannel
 
 
-class LongSlowmode(Blimp.Cog):
-    """*Deleting things that are just too new for your taste.*
-    Manages slowmode enforcement for arbitrary durations."""
+class Slowmode(Blimp.Cog):
+    "Deleting things that are just too new for your taste."
 
     @commands.group()
     async def slowmode(self, ctx: Blimp.Context):
-        "Manage slowmodes."
+        """BLIMP Slowmode is an extension of Discord's built-in slowmode, with arbitrary length for
+        the slowmode. Once set up in a channel, BLIMP monitors all message timestamps and deletes
+        messages that were posted to recently, notifying the user in question via DM."""
 
     @commands.command(parent=slowmode, name="set")
     async def _set(
@@ -25,15 +26,20 @@ class LongSlowmode(Blimp.Cog):
         ignore_mods: bool = True,
     ):
         """Set a channel's slowmode to an arbitrary value.
-        If the duration is over 6 hours, the bot will manually enforce slowmode
-        by deleting messages that have been posted too soon since the last one.
-        By default, ignores moderators in that channel.
-        Set duration to 0 to disable."""
+
+        `channel` is the channel to target, if left empty, BLIMP works with the current channel.
+
+        `duration` is a [duration]($manual#arguments). If over 6 hours, the bot will manually
+        enforce slowmode by deleting messages that have been posted too soon since the last one. Set
+        to a zero duration to disable slowmode.
+
+        `ignore_mods` determines if BLIMP will delete messages from mods too. By default, it won't.
+        """
         if not channel:
             channel = ctx.channel
 
         if not ctx.privileged_modify(channel):
-            return
+            raise Unauthorized()
 
         secs = duration.total_seconds()
         await channel.edit(slowmode_delay=min(21600, secs), reason=str(ctx.author))
@@ -66,12 +72,17 @@ class LongSlowmode(Blimp.Cog):
         channel: Optional[MaybeAliasedTextChannel],
         user: discord.Member,
     ):
-        "Reset a user's slowmode data, so they can post again immediately."
+        """Reset a user's slowmode data, so they can post again immediately.
+
+        `channel` is the channel to target, if left empty, BLIMP works with the current channel.
+
+        `user` is the server member whose timestamp should be reset."""
 
         if not channel:
             channel = ctx.channel
+
         if not ctx.privileged_modify(channel):
-            return
+            raise Unauthorized()
 
         ctx.database.execute(
             "DELETE FROM slowmode_entries WHERE channel_oid=:channel_oid AND user_oid=:user_oid",

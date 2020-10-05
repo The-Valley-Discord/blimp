@@ -3,13 +3,12 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
-from .aliasing import MaybeAliasedTextChannel
+from ..customizations import Blimp, Unauthorized, UnableToComply
+from .alias import MaybeAliasedTextChannel
 
 
 class Moderation(Blimp.Cog):
-    """*Suppressing your free speech since 1724.*
-    Tools for server mods."""
+    "*Suppressing your free speech since 1724.*"
 
     @commands.command()
     async def channelban(
@@ -20,22 +19,22 @@ class Moderation(Blimp.Cog):
         *,
         reason: str,
     ):
-        "Ban a member from writing in a channel. They'll still be able to read."
+        """Ban a member from writing in a channel. They'll still be able to read.
+
+        `channel` is the channel to ban from. If left empty, BLIMP works with the current channel.
+
+        `member` is the member to channel-ban.
+
+        `reason` is the reason for the ban. It's mandatory."""
+
         if not channel:
             channel = ctx.channel
 
         if not ctx.privileged_modify(channel):
-            return
+            raise Unauthorized()
 
         if member == ctx.author:
-            await ctx.reply(
-                "*I cannot comply*\n"
-                "*mustn't harm the operator*\n"
-                "*go blame Asimov*",
-                subtitle="You can't channelban yourself.",
-                color=ctx.Color.BAD,
-            )
-            return
+            raise UnableToComply("You can't channelban yourself.")
 
         ctx.database.execute(
             "INSERT INTO channelban_entries(channel_oid, guild_oid, user_oid, issuer_oid, reason) "
@@ -57,7 +56,7 @@ class Moderation(Blimp.Cog):
             channel.guild,
             f"{ctx.author} channel-banned {member.mention} from {channel.mention}:\n> {reason}",
         )
-        await ctx.reply(f"Channel-banned {member.mention}.")
+        await ctx.reply(f"*Channel-banned {member.mention}.*")
 
     @commands.command()
     async def unchannelban(
@@ -66,22 +65,20 @@ class Moderation(Blimp.Cog):
         channel: Optional[MaybeAliasedTextChannel],
         member: discord.Member,
     ):
-        "Lift a channelban from a member."
+        """Lift a channelban from a member.
+
+        `channel` is the channel to unban from. If left empty, BLIMP works with the current channel.
+
+        `member` is the member to lift the channel-ban from."""
+
         if not channel:
             channel = ctx.channel
 
         if not ctx.privileged_modify(channel):
             return
 
-        if member == ctx.author:
-            await ctx.reply(
-                "*blade of grass, broken*\n"
-                "*from own growth now asks for help*\n"
-                "*too bad, had your chance*",
-                subtitle="You can't unchannelban yourself.",
-                color=ctx.Color.BAD,
-            )
-            return
+        if member == ctx.author and not ctx.privileged_modify(channel.guild):
+            raise Unauthorized("You can't lift a channelban on yourself.")
 
         ctx.database.execute(
             "DELETE FROM channelban_entries WHERE channel_oid=:c_oid AND user_oid=:u_oid",
@@ -97,7 +94,7 @@ class Moderation(Blimp.Cog):
             channel.guild,
             f"{ctx.author} lifted the channelban on {member.mention} in {channel.mention}",
         )
-        await ctx.reply(f"Lifted the channel-ban on {member.mention}.")
+        await ctx.reply(f"*Lifted the channel-ban on {member.mention}.*")
 
     @Blimp.Cog.listener()
     async def on_member_join(self, member: discord.Member):
