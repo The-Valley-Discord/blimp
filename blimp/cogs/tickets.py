@@ -19,7 +19,12 @@ class Tickets(Blimp.Cog):
     async def ticket(self, ctx: Blimp.Context):
         """Tickets are temporary private channels created by a user to, for example, request
         assistance, talk to moderators privately, or organize internal discussions. They are
-        automatically archived into an easily-readable format on deletion."""
+        automatically archived into an easily-readable format on deletion.
+
+        Tickets are configured on a per-category basis. These share common configuration and a
+        counter. Within these categories, one can also use ticket classes to allow different
+        content templates for fresh tickets. Depending on your use-case, you might not need more
+        than one class though."""
 
     @commands.command(parent=ticket)
     async def updatecategory(
@@ -137,7 +142,8 @@ class Tickets(Blimp.Cog):
         ).fetchone()
         if old:
             log_embed.add_field(
-                name="Old Description", value=old["description"],
+                name="Old Description",
+                value=old["description"],
             )
 
         ctx.database.execute(
@@ -152,7 +158,8 @@ class Tickets(Blimp.Cog):
         )
 
         log_embed.add_field(
-            name="New Description", value=description,
+            name="New Description",
+            value=description,
         )
 
         await self.bot.post_log(category.guild, embed=log_embed)
@@ -291,7 +298,9 @@ class Tickets(Blimp.Cog):
 
     @commands.command(parent=ticket)
     async def delete(
-        self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel],
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
     ):
         """Delete a ticket and create a transcript.
 
@@ -333,7 +342,10 @@ class Tickets(Blimp.Cog):
             microseconds=ctx.message.created_at.microsecond
         )
         archive_embed = (
-            discord.Embed(title=f"#{channel.name}", color=ctx.Color.I_GUESS,)
+            discord.Embed(
+                title=f"#{channel.name}",
+                color=ctx.Color.I_GUESS,
+            )
             .add_field(
                 name="Created",
                 value=str(created_timestamp) + f"\n<@{ticket['creator_id']}>",
@@ -476,7 +488,8 @@ class Tickets(Blimp.Cog):
             overwrites_without_member = channel.overwrites
             overwrites_without_member.pop(member, None)
             await channel.edit(
-                overwrites=overwrites_without_member, reason=str(ctx.author),
+                overwrites=overwrites_without_member,
+                reason=str(ctx.author),
             )
             ctx.database.execute(
                 """DELETE FROM ticket_participants WHERE channel_oid = :channel_oid

@@ -156,10 +156,10 @@ class Transcript:
     @classmethod
     def write_embed(cls, embed: discord.Embed) -> str:
         "Render an embed to HTML. TODO more than bare minimum of effort"
-        result = (
-            "<div class='embed' "
-            f"style='border-left-color: #{str(hex(embed.color.value))[2:]}'>"
-        )
+
+        result = "<div class='embed' "
+        if embed.color:
+            result += f"style='border-left-color: #{str(hex(embed.color.value))[2:]}'>"
 
         if embed.title:
             result += "<h3>"
