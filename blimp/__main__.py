@@ -1,7 +1,6 @@
-"""
-Actually the interesting file, init code lives here
-"""
+"Actually the interesting file, init code lives here"
 
+import base64
 import logging
 import re
 from configparser import ConfigParser
@@ -165,17 +164,28 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.UserInputError):
         await ctx.reply(
-            str(error), title=PleaseRestate.TEXT, color=ctx.Color.BAD,
+            str(error),
+            title=PleaseRestate.TEXT,
+            color=ctx.Color.BAD,
         )
         return
     elif isinstance(error, commands.CommandNotFound):
         return
     else:
+        error_int = int(ctx.author.id) + int(ctx.message.id)
+        error_bytes = error_int.to_bytes(
+            (error_int.bit_length() + 7) // 8, byteorder="little"
+        )
+        error_id = str(base64.urlsafe_b64encode(error_bytes), encoding="utf-8")
+
         ctx.log.error(
-            f"Encountered exception during executing {ctx.command}", exc_info=error
+            f"Encountered exception during executing {ctx.command} ID {error_id}",
+            exc_info=error,
         )
         await ctx.reply(
-            title="Unable to comply, internal error.", color=ctx.Color.BAD,
+            f"If you report this bug, please give us this log ID: `{error_id}`",
+            title="Unable to comply, internal error.",
+            color=ctx.Color.BAD,
         )
 
 
