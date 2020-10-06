@@ -160,6 +160,8 @@ class Transcript:
         result = "<div class='embed' "
         if embed.color:
             result += f"style='border-left-color: #{str(hex(embed.color.value))[2:]}'>"
+        else:
+            result += ">"
 
         if embed.title:
             result += "<h3>"
