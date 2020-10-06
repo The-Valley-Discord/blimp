@@ -33,7 +33,7 @@ class Tickets(Blimp.Cog):
         category: MaybeAliasedCategoryChannel,
         last_ticket_number: int,
         transcript_channel: MaybeAliasedTextChannel,
-        can_creator_close: bool,
+        is_creator_staff: bool,
         per_user_limit: Optional[int],
     ):
         """Update a Ticket category, overwriting its setup entirely.
@@ -46,8 +46,9 @@ class Tickets(Blimp.Cog):
         `transcript_channel` is the channel where BLIMP will post transcripts of deleted Tickets.
         These include a full conversation transcript rendered as HTML and some statistics.
 
-        `can_creator_close` determines if the creator of a ticket should be allowed to delete it.
-        Depending on your use case, this may not be desirable.
+        `is_creator_staff` determines if the creator of a ticket should be allowed to perform
+        staff-only actions (deleting and adding/removing members). Depending on your use case, this
+        may or may not be desirable.
 
         `per_user_limit` is an optional maximum number of Tickets a single unprivileged user can
         have in this category. If they exceed it, BLIMP will refuse to open further Tickets."""
@@ -70,7 +71,7 @@ class Tickets(Blimp.Cog):
                 name="Old",
                 value=f"Last Ticket: {old['count']}\n"
                 f"Transcripts: {await self.bot.represent_object(transcript_obj)}\n"
-                f"Creators can close/delete: {old['can_creator_close']}\n"
+                f"Creator is Staff: {bool(old['can_creator_close'])}\n"
                 f"Per-User Limit: {old['per_user_limit']}",
             )
 
@@ -89,7 +90,7 @@ class Tickets(Blimp.Cog):
                     tc=transcript_channel.id
                 ),
                 "per_user_limit": per_user_limit,
-                "can_creator_close": can_creator_close,
+                "can_creator_close": is_creator_staff,
             },
         )
 
@@ -97,7 +98,7 @@ class Tickets(Blimp.Cog):
             name="New",
             value=f"Last Ticket: {last_ticket_number}\n"
             f"Transcripts: {transcript_channel.mention}\n"
-            f"Creators can close/delete: {can_creator_close}\n"
+            f"Creator is Staff: {is_creator_staff}\n"
             f"Per-User Limit: {per_user_limit}",
         )
 
@@ -142,7 +143,8 @@ class Tickets(Blimp.Cog):
         ).fetchone()
         if old:
             log_embed.add_field(
-                name="Old Description", value=old["description"],
+                name="Old Description",
+                value=old["description"],
             )
 
         ctx.database.execute(
@@ -157,7 +159,8 @@ class Tickets(Blimp.Cog):
         )
 
         log_embed.add_field(
-            name="New Description", value=description,
+            name="New Description",
+            value=description,
         )
 
         await self.bot.post_log(category.guild, embed=log_embed)
@@ -268,11 +271,15 @@ class Tickets(Blimp.Cog):
             embed=discord.Embed(
                 title=f"Welcome to {actual_class['name']}-{ticket_category['count'] + 1}!\n",
                 description=(
-                    "Staff "
-                    + ("and you " if ticket_category["can_creator_close"] else "")
-                    + f"can delete this ticket using :x: or `ticket{ctx.bot.suffix} delete`\n"
+                    f"Delete this ticket using :x: or `ticket{ctx.bot.suffix} delete`\n"
                     + "Add or remove participants using "
-                    + f"`ticket{ctx.bot.suffix} add` and `ticket{ctx.bot.suffix} remove`.\n"
+                    + f"`ticket{ctx.bot.suffix} add` and `ticket{ctx.bot.suffix} remove`\n\n"
+                    + "These commands are restricted to Staff members"
+                    + (
+                        " and the ticket creator."
+                        if ticket_category["can_creator_close"]
+                        else "."
+                    )
                 ),
                 color=ctx.Color.AUTOMATIC_BLUE,
             ).set_footer(text="BLIMP Tickets", icon_url=ctx.bot.user.avatar_url),
@@ -296,7 +303,9 @@ class Tickets(Blimp.Cog):
 
     @commands.command(parent=ticket)
     async def delete(
-        self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel],
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
     ):
         """Delete a ticket and create a transcript.
 
@@ -338,7 +347,10 @@ class Tickets(Blimp.Cog):
             microseconds=ctx.message.created_at.microsecond
         )
         archive_embed = (
-            discord.Embed(title=f"#{channel.name}", color=ctx.Color.I_GUESS,)
+            discord.Embed(
+                title=f"#{channel.name}",
+                color=ctx.Color.I_GUESS,
+            )
             .add_field(
                 name="Created",
                 value=str(created_timestamp) + f"\n<@{ticket['creator_id']}>",
@@ -411,10 +423,20 @@ class Tickets(Blimp.Cog):
         if not ticket:
             return
 
+        category = ctx.database.execute(
+            "SELECT * from ticket_categories WHERE category_oid=:category_oid",
+            {"category_oid": ticket["category_oid"]},
+        ).fetchone()
+
         if not (
-            ctx.privileged_modify(channel) or ctx.author.id == ticket["creator_id"]
+            ctx.privileged_modify(channel)
+            or (category["can_creator_close"] and ctx.author.id == ticket["creator_id"])
         ):
-            raise Unauthorized("Only Staff and the ticket owner can add members.")
+            raise Unauthorized(
+                "Only Staff "
+                + ("and the ticket owner " if category["can_creator_close"] else "")
+                + "can add members to this ticket."
+            )
 
         member_text = " ".join([member.mention for member in members])
         await ctx.bot.post_log(
@@ -465,10 +487,20 @@ class Tickets(Blimp.Cog):
         if not ticket:
             return
 
+        category = ctx.database.execute(
+            "SELECT * from ticket_categories WHERE category_oid=:category_oid",
+            {"category_oid": ticket["category_oid"]},
+        ).fetchone()
+
         if not (
-            ctx.privileged_modify(channel) or ctx.author.id == ticket["creator_id"]
+            ctx.privileged_modify(channel)
+            or (category["can_creator_close"] and ctx.author.id == ticket["creator_id"])
         ):
-            raise Unauthorized("Only Staff and the ticket owner can remove members.")
+            raise Unauthorized(
+                "Only Staff "
+                + ("and the ticket owner " if category["can_creator_close"] else "")
+                + "can remove members from this ticket."
+            )
 
         member_text = " ".join([member.mention for member in members])
         await ctx.bot.post_log(
@@ -481,7 +513,8 @@ class Tickets(Blimp.Cog):
             overwrites_without_member = channel.overwrites
             overwrites_without_member.pop(member, None)
             await channel.edit(
-                overwrites=overwrites_without_member, reason=str(ctx.author),
+                overwrites=overwrites_without_member,
+                reason=str(ctx.author),
             )
             ctx.database.execute(
                 """DELETE FROM ticket_participants WHERE channel_oid = :channel_oid
