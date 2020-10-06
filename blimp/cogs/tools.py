@@ -1,4 +1,6 @@
 import asyncio
+import tempfile
+from datetime import timedelta
 from typing import Optional, Union
 
 import discord
@@ -7,6 +9,7 @@ from discord.ext import commands
 
 from ..customizations import Blimp, ParseableTimedelta, Unauthorized
 from ..message_formatter import create_message_dict
+from ..transcript import Transcript
 from .alias import (
     MaybeAliasedCategoryChannel,
     MaybeAliasedMessage,
@@ -232,4 +235,62 @@ class Tools(Blimp.Cog):
                 )
                 .add_field(name="Old", value=old["text"])
                 .add_field(name="New", value=text),
+            )
+
+    @commands.command()
+    async def transcript(
+        self,
+        ctx: Blimp.Context,
+        channel: Optional[MaybeAliasedTextChannel],
+        start_with: Optional[MaybeAliasedMessage],
+        end_with: Optional[MaybeAliasedMessage],
+    ):
+        """Create a transcript of a channel.
+
+        `channel` is the channel to transcribe. If left empty, BLIMP will work with the current
+        channel.
+
+        `start_with` is the first message that should appear in the transcript.
+
+        `end_with` is the last message that should appear in the transcript.
+
+        There is a hard limit of 2000 messages getting transcribed at once."""
+
+        if not channel:
+            channel = ctx.channel
+
+        if not ctx.privileged_modify(channel):
+            raise Unauthorized()
+
+        with tempfile.TemporaryFile(mode="r+") as temp:
+            messages = await Transcript.write_transcript(
+                temp,
+                channel,
+                first_message_id=None if not start_with else start_with.id,
+                last_message_id=None if not end_with else end_with.id,
+            )
+            temp.seek(0)
+
+            first_ts = discord.utils.snowflake_time(messages[0].id)
+            first_ts = first_ts - timedelta(microseconds=first_ts.microsecond)
+
+            last_ts = discord.utils.snowflake_time(messages[-1].id)
+            last_ts = last_ts - timedelta(microseconds=last_ts.microsecond)
+
+            archive_embed = discord.Embed(
+                title=f"#{channel.name}", color=ctx.Color.I_GUESS,
+            ).add_field(
+                name="Transcript",
+                value=f"From {first_ts}\nTo {last_ts}\n{len(messages)} messages",
+            )
+
+            participants = {message.author for message in messages}
+            archive_embed.add_field(
+                name="Participants",
+                value="\n".join(user.mention for user in participants),
+            )
+
+            await ctx.channel.send(
+                embed=archive_embed,
+                file=discord.File(fp=temp, filename=f"{channel.name}.html"),
             )

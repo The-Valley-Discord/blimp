@@ -164,9 +164,7 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.UserInputError):
         await ctx.reply(
-            str(error),
-            title=PleaseRestate.TEXT,
-            color=ctx.Color.BAD,
+            str(error), title=PleaseRestate.TEXT, color=ctx.Color.BAD,
         )
         return
     elif isinstance(error, commands.CommandNotFound):

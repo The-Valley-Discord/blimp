@@ -2,7 +2,7 @@ import html
 import re
 from datetime import timedelta
 from string import Template
-from typing import List
+from typing import List, Optional
 
 import discord
 
@@ -151,6 +151,8 @@ class Transcript:
         )
     )
 
+    TRUNCATED_WARNING = "<h2>Transcript truncated at 2000 messages.</h2>"
+
     TRANSCRIPT_FOOTER = "</section></body></html>"
 
     @classmethod
@@ -178,7 +180,13 @@ class Transcript:
         return result
 
     @classmethod
-    async def write_transcript(cls, file, channel) -> List[discord.Message]:
+    async def write_transcript(
+        cls,
+        file,
+        channel,
+        first_message_id: Optional[int] = None,
+        last_message_id: Optional[int] = None,
+    ) -> List[discord.Message]:
         "Write a transcript of the channel into file and return a list of all messages processed."
         all_messages = []
         file.write(
@@ -187,7 +195,25 @@ class Transcript:
                 headline=f"#{channel.name} on {channel.guild.name}",
             )
         )
-        async for message in channel.history(limit=None, oldest_first=True):
+
+        if first_message_id:
+            first_message_id = discord.Object(first_message_id - 1)
+
+        if last_message_id:
+            last_message_id = discord.Object(last_message_id + 1)
+
+        count = 0
+        async for message in channel.history(
+            oldest_first=True,
+            limit=2001,
+            after=first_message_id,
+            before=last_message_id,
+        ):
+            count += 1
+            if count == 2001:
+                file.write(cls.TRUNCATED_WARNING)
+                break
+
             all_messages.append(message)
             clean_timestamp = message.created_at - timedelta(
                 microseconds=message.created_at.microsecond
@@ -211,6 +237,7 @@ class Transcript:
                     ),
                 )
             )
+
         file.write(cls.TRANSCRIPT_FOOTER)
 
         return all_messages
