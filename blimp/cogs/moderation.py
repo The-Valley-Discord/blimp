@@ -19,7 +19,7 @@ class Moderation(Blimp.Cog):
         *,
         reason: str,
     ):
-        """Ban a member from writing in a channel. They'll still be able to read.
+        """Ban a member from writing or reacting in a channel. They'll still be able to read.
 
         `channel` is the channel to ban from. If left empty, BLIMP works with the current channel.
 
@@ -49,7 +49,7 @@ class Moderation(Blimp.Cog):
         )
 
         await channel.set_permissions(
-            member, send_messages=False, reason=str(ctx.author)
+            member, send_messages=False, add_reactions=False, reason=str(ctx.author)
         )
 
         await ctx.bot.post_log(
@@ -88,7 +88,7 @@ class Moderation(Blimp.Cog):
             },
         )
 
-        await channel.set_permissions(member, send_messages=None)
+        await channel.set_permissions(member, send_messages=None, add_reactions=None)
 
         await ctx.bot.post_log(
             channel.guild,
@@ -116,14 +116,19 @@ class Moderation(Blimp.Cog):
                 channel = self.bot.get_channel(
                     self.bot.objects.by_oid(row["channel_oid"])["tc"]
                 )
-                await channel.set_permissions(member, send_messages=False)
+                await channel.set_permissions(
+                    member, send_messages=False, add_reactions=False
+                )
                 log_str += f"{channel.mention} OK\n"
             except:  # pylint: disable=bare-except
                 channel_id = self.bot.objects.by_oid(row["channel_oid"])["tc"]
                 log_str += f"<#{channel_id}> Error, auto-unbanning.\n"
                 self.bot.database.execute(
                     "DELETE FROM channelban_entries WHERE user_oid=:u_oid AND channel_oid=:c_oid",
-                    {"u_oid": row["user_oid"], "c_oid": row["channel_oid"],},
+                    {
+                        "u_oid": row["user_oid"],
+                        "c_oid": row["channel_oid"],
+                    },
                 )
 
         log_embed = discord.Embed(
