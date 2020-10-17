@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime
+from typing import List
 
 import discord
 from discord.ext import commands
@@ -113,7 +114,7 @@ class Board(Blimp.Cog):
 
     @staticmethod
     def format_message(
-        msg: discord.Message, reaction: discord.Reaction
+        msg: discord.Message, reactions: List[discord.Reaction]
     ) -> discord.Embed:
         "Turn a message into an embed for the Board."
 
@@ -136,7 +137,7 @@ class Board(Blimp.Cog):
 
         embed.add_field(
             name="Message",
-            value=f"{reaction.count}x {reaction}"
+            value=f"{reactions[0].count}x {' '.join([str(r) for r in reactions])}"
             f" — Posted to {msg.channel.mention} — "
             f"[Jump]({msg.jump_url})",
         )
@@ -178,9 +179,10 @@ class Board(Blimp.Cog):
                 )
                 and react.count >= min_reacts
             ]
-            reaction = sorted(
-                possible_reactions, key=lambda react: react.count, reverse=True,
-            )
+            max_count = max(possible_reactions, key=lambda react: react.count).count
+            reaction = [
+                react for react in possible_reactions if react.count == max_count
+            ]
             if not reaction:
                 continue
 
@@ -197,9 +199,7 @@ class Board(Blimp.Cog):
                 board_msg = await self.bot.get_channel(to_edit[0]).fetch_message(
                     to_edit[1]
                 )
-                await board_msg.edit(
-                    embed=self.format_message(orig_message, reaction[0])
-                )
+                await board_msg.edit(embed=self.format_message(orig_message, reaction))
             else:
                 board_channel = self.bot.get_channel(objects.by_oid(board["oid"])["tc"])
                 if (
@@ -209,7 +209,7 @@ class Board(Blimp.Cog):
                     continue
 
                 board_msg = await board_channel.send(
-                    "", embed=self.format_message(orig_message, reaction[0])
+                    "", embed=self.format_message(orig_message, reaction)
                 )
                 self.bot.database.execute(
                     "INSERT INTO board_entries(oid, original_oid) VALUES(:oid, :original_oid)",
