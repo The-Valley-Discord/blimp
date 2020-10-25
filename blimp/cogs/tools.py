@@ -56,7 +56,7 @@ class Tools(Blimp.Cog):
 
         `category` is the channel category that should be inspected.
 
-        `duration` is a [duration]($manual#arguments). Channels that haven't received any messages
+        `duration` is a [duration]($manual#durations). Channels that haven't received any messages
         during this time are considered stale and will be printed. Defaults to two days."""
 
         channels = []
@@ -278,7 +278,8 @@ class Tools(Blimp.Cog):
             last_ts = last_ts - timedelta(microseconds=last_ts.microsecond)
 
             archive_embed = discord.Embed(
-                title=f"#{channel.name}", color=ctx.Color.I_GUESS,
+                title=f"#{channel.name}",
+                color=ctx.Color.I_GUESS,
             ).add_field(
                 name="Transcript",
                 value=f"From {first_ts}\nTo {last_ts}\n{len(messages)} messages",

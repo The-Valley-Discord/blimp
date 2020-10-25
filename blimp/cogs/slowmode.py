@@ -29,7 +29,7 @@ class Slowmode(Blimp.Cog):
 
         `channel` is the channel to target, if left empty, BLIMP works with the current channel.
 
-        `duration` is a [duration]($manual#arguments). If over 6 hours, the bot will manually
+        `duration` is a [duration]($manual#durations). If over 6 hours, the bot will manually
         enforce slowmode by deleting messages that have been posted too soon since the last one. Set
         to a zero duration to disable slowmode.
 

@@ -71,7 +71,8 @@ class Reminders(Blimp.Cog):
                 raise
             finally:
                 self.bot.database.execute(
-                    "DELETE FROM reminders_entries WHERE id=:id", {"id": entry["id"]},
+                    "DELETE FROM reminders_entries WHERE id=:id",
+                    {"id": entry["id"]},
                 )
 
     @commands.group()
@@ -137,8 +138,8 @@ class Reminders(Blimp.Cog):
     ):
         """Add a timed reminder for yourself.
 
-        `when` can be either a [duration]($manual#arguments) from now or a [time
-        stamp]($manual#arguments). Either way, it determines when the reminder will fire.
+        `when` can be either a [duration]($manual#durations) from now or a [time
+        stamp]($manual#timestamps). Either way, it determines when the reminder will fire.
 
         `text` is your reminder text. You can leave this empty.
 
