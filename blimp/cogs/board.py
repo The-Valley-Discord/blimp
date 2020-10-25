@@ -179,12 +179,14 @@ class Board(Blimp.Cog):
                 )
                 and react.count >= min_reacts
             ]
+
+            if not possible_reactions:
+                return
+
             max_count = max(possible_reactions, key=lambda react: react.count).count
             reaction = [
                 react for react in possible_reactions if react.count == max_count
             ]
-            if not reaction:
-                continue
 
             to_edit = self.bot.database.execute(
                 "SELECT * FROM board_entries WHERE original_oid=:original_oid",
