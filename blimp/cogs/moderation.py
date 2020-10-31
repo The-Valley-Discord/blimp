@@ -36,6 +36,9 @@ class Moderation(Blimp.Cog):
         if member == ctx.author:
             raise UnableToComply("You can't channelban yourself.")
 
+        if member == ctx.bot.user:
+            raise UnableToComply("No.")
+
         ctx.database.execute(
             "INSERT INTO channelban_entries(channel_oid, guild_oid, user_oid, issuer_oid, reason) "
             "VALUES(:c_oid, :g_oid, :u_oid, :i_oid, :reason)",
@@ -76,9 +79,6 @@ class Moderation(Blimp.Cog):
 
         if not ctx.privileged_modify(channel):
             return
-
-        if member == ctx.author and not ctx.privileged_modify(channel.guild):
-            raise Unauthorized("You can't lift a channelban on yourself.")
 
         ctx.database.execute(
             "DELETE FROM channelban_entries WHERE channel_oid=:c_oid AND user_oid=:u_oid",
