@@ -64,7 +64,7 @@ def process_docstrings(text) -> str:
     )
 
 
-once_lock = False
+ONCE_LOCK = False
 
 
 @bot.event
@@ -72,8 +72,8 @@ async def on_ready():
     "Hello world."
     bot.log.info(f"Logged in as {bot.user}")
 
-    global once_lock
-    if not once_lock:
+    global ONCE_LOCK
+    if not ONCE_LOCK:
         bot.add_cog(cogs.Reminders(bot))
         bot.owner_id = (await bot.application_info()).owner.id
 
@@ -81,7 +81,7 @@ async def on_ready():
         for command in bot.walk_commands():
             command.help = process_docstrings(command.help)
 
-        once_lock = True
+        ONCE_LOCK = True
 
 
 @bot.command(name="help")
@@ -146,6 +146,18 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
 
 
 @bot.event
+async def on_command_completion(ctx):
+    "Log when we invoke commands"
+    args = [
+        arg
+        for arg in ctx.args
+        if not isinstance(arg, Blimp.Cog) and not isinstance(arg, Blimp.Context)
+    ]
+    args.extend(list(ctx.kwargs.values()))
+    ctx.log.info(f"{ctx.author} invoked with {args}")
+
+
+@bot.event
 async def on_command_error(ctx, error):
     """
     Handle errors, delegating all "internal errors" (exceptions foreign to
@@ -164,7 +176,9 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.UserInputError):
         await ctx.reply(
-            str(error), title=PleaseRestate.TEXT, color=ctx.Color.BAD,
+            str(error),
+            title=PleaseRestate.TEXT,
+            color=ctx.Color.BAD,
         )
         return
     elif isinstance(error, commands.CommandNotFound):
@@ -174,7 +188,10 @@ async def on_command_error(ctx, error):
         error_bytes = error_int.to_bytes(
             (error_int.bit_length() + 7) // 8, byteorder="little"
         )
-        error_id = str(base64.urlsafe_b64encode(error_bytes), encoding="utf-8")
+        error_id = str(
+            base64.urlsafe_b64encode(error_bytes),
+            encoding="utf-8",
+        ).replace("=", "")
 
         ctx.log.error(
             f"Encountered exception during executing {ctx.command} ID {error_id}",

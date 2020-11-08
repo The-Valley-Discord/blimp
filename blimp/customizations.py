@@ -57,10 +57,11 @@ class Blimp(commands.Bot):
         @property
         def log(self) -> logging.Logger:
             """Return a logger that's associated with the current cog and command."""
+            name = self.command.name.replace(self.bot.config["discord"]["suffix"], "")
             if not self.cog:
-                return self.bot.log.getChild(self.command.name)
+                return self.bot.log.getChild(name)
 
-            return self.cog.log.getChild(self.command.name)
+            return self.cog.log.getChild(name)
 
         @property
         def database(self) -> sqlite3.Connection:
