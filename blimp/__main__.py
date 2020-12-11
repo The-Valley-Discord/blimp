@@ -146,7 +146,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
 
 
 @bot.event
-async def on_command_completion(ctx):
+async def on_command(ctx):
     "Log when we invoke commands"
     args = [
         arg
@@ -194,7 +194,7 @@ async def on_command_error(ctx, error):
         ).replace("=", "")
 
         ctx.log.error(
-            f"Encountered exception during executing {ctx.command} ID {error_id}",
+            f"Encountered exception during executing {ctx.command} [ID {error_id}]",
             exc_info=error,
         )
         await ctx.reply(

@@ -1,4 +1,5 @@
 import asyncio
+import pprint
 import tempfile
 from datetime import timedelta
 from typing import Optional, Union
@@ -7,7 +8,7 @@ import discord
 import toml
 from discord.ext import commands
 
-from ..customizations import Blimp, ParseableTimedelta, Unauthorized
+from ..customizations import Blimp, ParseableTimedelta, UnableToComply, Unauthorized
 from ..message_formatter import create_message_dict
 from ..transcript import Transcript
 from .alias import (
@@ -19,6 +20,8 @@ from .alias import (
 
 class Tools(Blimp.Cog):
     "Semi-useful things, actually."
+
+    last_eval_result = None
 
     @commands.command()
     async def cleanup(self, ctx: Blimp.Context, limit: int = 20, any_bot: bool = False):
@@ -83,13 +86,51 @@ class Tools(Blimp.Cog):
         )
 
     @commands.command()
-    @commands.is_owner()
     async def eval(self, ctx: Blimp.Context, *, code: str):
-        "Parse an expression as a lambda and apply it to the Context. No, you can't use this."
+        "Parse a code block as a function body and execute it. No, you can't use this."
 
-        the_letter_after_kappa = eval(code)  # pylint: disable=eval-used
-        await the_letter_after_kappa(ctx)
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        if not await ctx.bot.is_owner(ctx.author):
+            raise Unauthorized()
+
+        code = code.removeprefix("```py").strip("\n` ")
+        lines = code.splitlines()
+
+        # if the code is just a single expression, turn it into a return statement
+        if len(lines) == 1:
+            try:
+                # this will fail if it's already a statement
+                compile(lines[0], "", "eval")
+                lines[0] = f"return {lines[0]}"
+            except SyntaxError:
+                pass
+
+        lines.insert(0, "global plain")
+        code = "async def apply():\n" + "\n".join([f"    {line}" for line in lines])
+
+        printer = pprint.PrettyPrinter(width=56)
+        try:
+            environment = {
+                "ctx": ctx,
+                "_": self.last_eval_result,
+                "plain": False,
+            }
+            compiled = compile(
+                code,
+                "The Empty String",
+                "exec",
+                optimize=0,
+            )
+            exec(compiled, environment)  # pylint: disable=exec-used
+            self.last_eval_result = await environment["apply"]()
+
+            if environment["plain"]:
+                await ctx.reply(self.last_eval_result)
+            else:
+                pretty = printer.pformat(self.last_eval_result)
+                await ctx.reply(f"```py\n{pretty}```")
+
+        except Exception as ex:  # pylint: disable=broad-except
+            await ctx.reply(f"```\n{ex}```", color=ctx.Color.BAD)
 
     @commands.command()
     async def pleasetellmehowmanypeoplehave(

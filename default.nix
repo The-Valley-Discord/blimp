@@ -1,19 +1,11 @@
 with import (builtins.fetchTarball {
-  # nixos-unstable on 2020-07-18
+  # nixpkgs master on 2020-10-14
   url =
-    "https://github.com/NixOS/nixpkgs/tarball/d7e20ee25ed8aa1f0f24a9ca77026c6ef217f6ba";
-  sha256 = "1ar7prnrmmlqj17g57nqp82hgy5283dxb94akaqrwpbaz7qfwi4y";
+    "https://github.com/NixOS/nixpkgs/tarball/692d219a9312fbe3f8b34858a7ca0e32fb72bd07";
+  sha256 = "1c5sm789yr6v34lhjscmn1c93ix5cqw6cksjc2n0lrm8hjwfllry";
 }) { };
 
 poetry2nix.mkPoetryApplication {
   projectDir = ./.;
-
-  # default cleaning of non-source files, but also ignore config and database
-  src = lib.cleanSourceWith {
-    filter = name: type:
-      let baseName = baseNameOf (toString name);
-      in !(baseName == "blimp.cfg" || baseName == "blimp.db");
-
-    src = poetry2nix.cleanPythonSources { src = ./.; };
-  };
+  python = python39;
 }
