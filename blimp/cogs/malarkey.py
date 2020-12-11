@@ -26,12 +26,14 @@ class Malarkey(Blimp.Cog):
         pong = random.choice(self.pings)
         in_delta = now - ctx.message.created_at
         msg = await ctx.reply(
-            f"*{pong}*", subtitle=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms",
+            f"*{pong}*",
+            subtitle=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms",
         )
         out_delta = msg.created_at - now
         await msg.edit(
             embed=discord.Embed(
-                color=ctx.Color.GOOD, description=f"*{pong}*",
+                color=ctx.Color.GOOD,
+                description=f"*{pong}*",
             ).set_footer(
                 text=f"Inbound: {in_delta/timedelta(milliseconds=1)}ms | "
                 f"Outbound: {out_delta/timedelta(milliseconds=1)}ms"
