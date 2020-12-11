@@ -163,6 +163,9 @@ class Tools(Blimp.Cog):
         if not ctx.privileged_modify(channel):
             raise Unauthorized()
 
+        if len(text) > 1024:
+            raise UnableToComply(f"Proposed topic is too long ({len(text)}/1024)")
+
         log_embed = (
             discord.Embed(
                 description=f"{ctx.author} updated the topic of {channel.mention}.",
@@ -196,6 +199,9 @@ class Tools(Blimp.Cog):
 
         if not ctx.privileged_modify(channel):
             raise Unauthorized()
+
+        if len(text) > 100:
+            raise UnableToComply(f"Proposed name is too long ({len(text)}/1024)")
 
         log_embed = (
             discord.Embed(

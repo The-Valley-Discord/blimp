@@ -5,7 +5,7 @@ from typing import List, Union
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp
+from ..customizations import Blimp, PleaseRestate, UnableToComply, Unauthorized
 from .alias import MaybeAliasedMessage
 
 
@@ -62,11 +62,9 @@ class Kiosk(Blimp.Cog):
             return
 
         if len(result) > 20:
-            await ctx.reply(
-                "**Unable to comply:** Can't use more than 20 reaction-role pairs per message.",
-                color=ctx.Color.BAD,
+            raise UnableToComply(
+                "You can't use more than 20 reaction-role pairs per message.",
             )
-            return
 
         user_failed_roles = []
         bot_failed_roles = []
@@ -77,20 +75,16 @@ class Kiosk(Blimp.Cog):
                 bot_failed_roles.append(role)
 
         if user_failed_roles:
-            await ctx.reply(
-                "**Unauthorized:** You can't modify the following roles: "
+            raise Unauthorized(
+                "You can't modify the following roles: "
                 + " ".join([r.mention for r in user_failed_roles]),
-                color=ctx.Color.BAD,
             )
-            return
 
         if bot_failed_roles:
-            await ctx.reply(
-                "**Unable to comply:** BLIMP can't modify the following roles: "
+            raise UnableToComply(
+                "BLIMP can't modify the following roles: "
                 + " ".join([r.mention for r in bot_failed_roles]),
-                color=ctx.Color.BAD,
             )
-            return
 
         result = [(emoji, role.id) for (emoji, role) in result]
 
@@ -168,13 +162,11 @@ class Kiosk(Blimp.Cog):
         ).fetchone()
 
         if not old:
-            await ctx.reply(
-                "**Unable to comply:** Message isn't a kiosk yet. Create one using `kiosk"
+            raise UnableToComply(
+                "Message isn't a kiosk yet. Create one using `kiosk"
                 + ctx.bot.config["discord"]["suffix"]
                 + " update` first.",
-                color=ctx.Color.BAD,
             )
-            return
 
         old_data = json.loads(old["data"])
 
@@ -188,11 +180,9 @@ class Kiosk(Blimp.Cog):
             return
 
         if len(result + old_data) > 20:
-            await ctx.reply(
-                "**Unable to comply:** Can't use more than 20 reaction-role pairs per message.",
-                color=ctx.Color.BAD,
+            raise UnableToComply(
+                "You can't use more than 20 reaction-role pairs per message.",
             )
-            return
 
         user_failed_roles = []
         bot_failed_roles = []
@@ -203,20 +193,16 @@ class Kiosk(Blimp.Cog):
                 bot_failed_roles.append(role)
 
         if user_failed_roles:
-            await ctx.reply(
-                "**Unauthorized:** You can't modify the following roles: "
+            raise Unauthorized(
+                "You can't modify the following roles: "
                 + " ".join([r.mention for r in user_failed_roles]),
-                color=ctx.Color.BAD,
             )
-            return
 
         if bot_failed_roles:
-            await ctx.reply(
-                "**Unable to comply:** BLIMP can't modify the following roles: "
+            raise UnableToComply(
+                "BLIMP can't modify the following roles: "
                 + " ".join([r.mention for r in bot_failed_roles]),
-                color=ctx.Color.BAD,
             )
-            return
 
         result = [(emoji, role.id) for (emoji, role) in result]
 
@@ -264,7 +250,9 @@ class Kiosk(Blimp.Cog):
 
     @commands.command(parent=kiosk)
     async def delete(
-        self, ctx: Blimp.Context, msg: MaybeAliasedMessage,
+        self,
+        ctx: Blimp.Context,
+        msg: MaybeAliasedMessage,
     ):
         "Delete a role kiosk (but not the message)."
 
@@ -276,11 +264,9 @@ class Kiosk(Blimp.Cog):
             {"oid": ctx.objects.by_data(m=[msg.channel.id, msg.id])},
         )
         if cursor.rowcount == 0:
-            await ctx.reply(
-                "**Unable to comply:** Can't delete kiosk as it doesn't exist.",
-                color=ctx.Color.BAD,
+            raise PleaseRestate(
+                "That message is not a Kiosk.",
             )
-            return
 
         for emoji in [item for item in msg.reactions if item.me]:
             await msg.remove_reaction(emoji.emoji, ctx.guild.me)
@@ -324,7 +310,8 @@ class Kiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).add_roles(
-                *roles, reason=f"Role Kiosk {payload.message_id}",
+                *roles,
+                reason=f"Role Kiosk {payload.message_id}",
             )
 
     @Blimp.Cog.listener()
@@ -338,5 +325,6 @@ class Kiosk(Blimp.Cog):
             await self.bot.get_guild(payload.guild_id).get_member(
                 payload.user_id
             ).remove_roles(
-                *roles, reason=f"Role Kiosk {payload.message_id}",
+                *roles,
+                reason=f"Role Kiosk {payload.message_id}",
             )
