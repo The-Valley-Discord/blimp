@@ -91,6 +91,17 @@ class Moderation(Blimp.Cog):
         if not ctx.privileged_modify(channel):
             return
 
+        exists = ctx.database.execute(
+            "SELECT * FROM channelban_entries WHERE channel_oid=:c_oid AND user_oid=:u_oid",
+            {
+                "c_oid": ctx.objects.make_object(tc=channel.id),
+                "u_oid": ctx.objects.make_object(u=member.id),
+            },
+        ).fetchone()
+
+        if not exists:
+            raise UnableToComply("Member is not channel-banned.")
+
         ctx.database.execute(
             "DELETE FROM channelban_entries WHERE channel_oid=:c_oid AND user_oid=:u_oid",
             {
