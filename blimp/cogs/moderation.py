@@ -39,6 +39,17 @@ class Moderation(Blimp.Cog):
         if member == ctx.bot.user:
             raise UnableToComply("No.")
 
+        exists = ctx.database.execute(
+            "SELECT * FROM channelban_entries WHERE channel_oid=:c_oid AND user_oid=:u_oid",
+            {
+                "c_oid": ctx.objects.make_object(tc=channel.id),
+                "u_oid": ctx.objects.make_object(u=member.id),
+            },
+        ).fetchone()
+
+        if exists:
+            raise UnableToComply("Member is already channelbanned.")
+
         ctx.database.execute(
             "INSERT INTO channelban_entries(channel_oid, guild_oid, user_oid, issuer_oid, reason) "
             "VALUES(:c_oid, :g_oid, :u_oid, :i_oid, :reason)",
