@@ -3,6 +3,7 @@ import logging
 import random
 import re
 import sqlite3
+from copy import copy
 from datetime import datetime, timedelta, timezone
 from typing import Union
 
@@ -73,7 +74,26 @@ class Blimp(commands.Bot):
             """Return the bot's Objects manager."""
             return self.bot.objects
 
-        async def reply(
+        async def invoke_command(self, text: str):
+            "Pretend the user is invoking a command."
+            words = text.split(" ")
+            if not words:
+                return
+
+            # suffix for commands is optional, as with help
+            if not words[0].endswith(self.bot.suffix):
+                words[0] = words[0] + self.bot.suffix
+                text = " ".join(words)
+
+            message = copy(self.message)
+
+            message.content = text
+            message.id = discord.utils.time_snowflake(
+                datetime.now(tz=timezone.utc).replace(tzinfo=None)
+            )
+            await self.bot.process_commands(message)
+
+        async def reply(  # pylint: disable=too-many-arguments
             self,
             msg: str = None,
             title: str = discord.Embed.Empty,

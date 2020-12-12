@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from copy import copy
 
 import discord
 from discord.ext import commands
@@ -124,21 +124,18 @@ class Triggers(Blimp.Cog):
         if not trigger:
             return
 
-        # Had I been able to feel anything after writing this, it would've been disgust.
-        message = await channel.fetch_message(payload.message_id)
-        actual_id = message.id
+        actual_message = await channel.fetch_message(payload.message_id)
 
-        message.author = channel.guild.get_member(payload.user_id)
-        message.content = trigger["command"]
-        message.id = discord.utils.time_snowflake(
-            datetime.now(tz=timezone.utc).replace(tzinfo=None)
-        )
-        await self.bot.process_commands(message)
+        # well, this is kinda disgusting.
+        invoke_message = copy(actual_message)
+        invoke_message.author = channel.guild.get_member(payload.user_id)
+        ctx = await self.bot.get_context(invoke_message)
+        await ctx.invoke_command(trigger["command"])
 
-        message.id = actual_id
         try:
-            await message.remove_reaction(
+            await actual_message.remove_reaction(
                 payload.emoji, channel.guild.get_member(payload.user_id)
             )
         except discord.errors.NotFound:
+            # when closing tickets, getting here means the message's already deleted
             pass
