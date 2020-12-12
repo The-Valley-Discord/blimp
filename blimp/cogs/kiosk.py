@@ -77,13 +77,15 @@ class Kiosk(Blimp.Cog):
         if user_failed_roles:
             raise Unauthorized(
                 "You can't modify the following roles: "
-                + " ".join([r.mention for r in user_failed_roles]),
+                + " ".join([r.mention for r in user_failed_roles])
+                + "\nYour highest role needs to be above all of them.",
             )
 
         if bot_failed_roles:
             raise UnableToComply(
                 "BLIMP can't modify the following roles: "
-                + " ".join([r.mention for r in bot_failed_roles]),
+                + " ".join([r.mention for r in bot_failed_roles])
+                + "\nThe bot's highest role needs to be above all of them.",
             )
 
         result = [(emoji, role.id) for (emoji, role) in result]
