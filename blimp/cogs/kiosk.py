@@ -168,41 +168,23 @@ class Kiosk(Blimp.Cog):
                 + " update` first.",
             )
 
-        old_data = json.loads(old["data"])
+        pairs = json.loads(old["data"]) + self.parse_emoji_pairs(args)
 
-        result = self.parse_emoji_pairs(args)
-
-        if len(result + old_data) == 0:
-            await ctx.reply(
-                "**Please restate query:** No valid reaction-role pairings found.",
-                color=ctx.Color.BAD,
-            )
-            return
-
-        if len(result + old_data) > 20:
-            raise UnableToComply(
-                "You can't use more than 20 reaction-role pairs per message.",
+        pair_string = " ".join(
+            [
+                f"{ctx.bot.get_emoji(d[0]) or d[0]} <@&{getattr(d[1], 'id', d[1])}>"
+                for d in pairs
+            ]
             )
 
-        user_failed_roles = []
-        bot_failed_roles = []
-        for _, role in result:
-            if not ctx.privileged_modify(role):
-                user_failed_roles.append(role)
-            if not ctx.me.top_role > role:
-                bot_failed_roles.append(role)
+        text = f"kiosk{ctx.bot.suffix} update {msg.channel.id}-{msg.id} {pair_string}"
 
-        if user_failed_roles:
-            raise Unauthorized(
-                "You can't modify the following roles: "
-                + " ".join([r.mention for r in user_failed_roles]),
+        await ctx.reply(
+            text, subtitle="Automagically invoking this command…", color=ctx.Color.AUTOMATIC_BLUE
             )
 
-        if bot_failed_roles:
-            raise UnableToComply(
-                "BLIMP can't modify the following roles: "
-                + " ".join([r.mention for r in bot_failed_roles]),
-            )
+        async with ctx.typing():
+            await ctx.invoke_command(text)
 
         result = [(emoji, role.id) for (emoji, role) in result]
 
