@@ -5,7 +5,7 @@ import re
 import sqlite3
 from copy import copy
 from datetime import datetime, timedelta, timezone
-from typing import Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import discord
 from discord import Activity, ActivityType
@@ -31,6 +31,24 @@ class Unauthorized(AnticipatedError):
 class PleaseRestate(AnticipatedError):
     "We didn't understand what the user wants."
     TEXT = "Please restate query."
+
+
+Ret = TypeVar("Ret")
+
+
+def maybe(
+    the_letter_after_kappa: Callable[[], Ret],
+    acceptable_error: Any = Exception,
+    instead: Optional[Ret] = None,
+) -> Optional[Ret]:
+    """Try to return the value of `the_letter_after_kappa`, a function taking no arguments. If this
+    fails for whatever reason, silently return `instead`. This is simply a monoid in the category of
+    endofunctors."""
+
+    try:
+        return the_letter_after_kappa()
+    except acceptable_error as _ex:  # pylint: disable=broad-except
+        return instead
 
 
 class Blimp(commands.Bot):

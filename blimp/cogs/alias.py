@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Union
+from typing import Tuple, Union
 
 import discord
 from discord.ext import commands
@@ -64,9 +64,9 @@ class Alias(Blimp.Cog):
                 "INSERT OR ROLLBACK INTO aliases(gid, alias, oid) VALUES(:gid, :alias, :oid);",
                 {"gid": ctx.guild.id, "alias": alias, "oid": oid},
             )
-        except sqlite3.DatabaseError:
+        except sqlite3.DatabaseError as ex:
             ctx.database.execute("ABORT;")
-            raise UnableToComply(f"Alias {alias} is already registered.")
+            raise UnableToComply(f"Alias {alias} is already registered.") from ex
 
         ctx.database.execute("COMMIT;")
 
@@ -118,6 +118,19 @@ class Alias(Blimp.Cog):
         await ctx.reply(result)
 
 
+def find_aliased_message_id(ctx: Blimp.Context, argument: str) -> Tuple[int, int]:
+    "Return a (channelid, messageid) tuple for an aliased message or raise commands.BadArgument."
+
+    row = ctx.objects.by_alias(ctx.guild.id, argument)
+    if not row:
+        raise commands.BadArgument(f"Unknown alias {argument}.")
+
+    if not row[1].get("m"):
+        raise commands.BadArgument(f"Alias {argument} doesn't refer to a message.")
+
+    return tuple(row[1]["m"])
+
+
 class MaybeAliasedMessage(discord.Message):
     """An alias-aware converter for Messages."""
 
@@ -129,16 +142,22 @@ class MaybeAliasedMessage(discord.Message):
         if not ctx.guild or not len(argument) > 1 or not argument[0] == "'":
             return await commands.MessageConverter().convert(ctx, argument)
 
-        oid, data = ctx.objects.by_alias(ctx.guild.id, argument)
-        if not oid:
-            raise commands.BadArgument(f"Unknown alias {argument}.")
-
-        if not data.get("m"):
-            raise commands.BadArgument(f"Alias {argument} doesn't refer to a message.")
-
+        channelid, messageid = find_aliased_message_id(ctx, argument)
         return await commands.MessageConverter().convert(
-            ctx, f"{data['m'][0]}-{data['m'][1]}"
+            ctx, f"{channelid}-{messageid}"
         )
+
+
+def find_aliased_channel_id(ctx: Blimp.Context, argument: str) -> int:
+    "Return the id for an aliased channel or raise commands.BadArgument."
+    row = ctx.objects.by_alias(ctx.guild.id, argument)
+    if not row:
+        raise commands.BadArgument(f"Unknown alias {argument}.")
+
+    if not row[1].get("tc"):
+        raise commands.BadArgument(f"Alias {argument} doesn't refer to a text channel.")
+
+    return row[1]["tc"]
 
 
 class MaybeAliasedTextChannel(discord.TextChannel):
@@ -152,16 +171,20 @@ class MaybeAliasedTextChannel(discord.TextChannel):
         if not ctx.guild or not len(argument) > 1 or not argument[0] == "'":
             return await commands.TextChannelConverter().convert(ctx, argument)
 
-        oid, data = ctx.objects.by_alias(ctx.guild.id, argument)
-        if not oid:
-            raise commands.BadArgument(f"Unknown alias {argument}.")
+        channelid = find_aliased_channel_id(ctx, argument)
+        return await commands.TextChannelConverter().convert(ctx, str(channelid))
 
-        if not data.get("tc"):
-            raise commands.BadArgument(
-                f"Alias {argument} doesn't refer to a text channel."
-            )
 
-        return await commands.TextChannelConverter().convert(ctx, str(data["tc"]))
+def find_aliased_category_id(ctx: Blimp.Context, argument: str) -> int:
+    "Return the id for an aliased category or raise commands.BadArgument."
+    row = ctx.objects.by_alias(ctx.guild.id, argument)
+    if not row:
+        raise commands.BadArgument(f"Unknown alias {argument}.")
+
+    if not row[1].get("cc"):
+        raise commands.BadArgument(f"Alias {argument} doesn't refer to a category.")
+
+    return row[1]["cc"]
 
 
 class MaybeAliasedCategoryChannel(discord.CategoryChannel):
@@ -175,11 +198,6 @@ class MaybeAliasedCategoryChannel(discord.CategoryChannel):
         if not ctx.guild or not len(argument) > 1 or not argument[0] == "'":
             return await commands.CategoryChannelConverter().convert(ctx, argument)
 
-        oid, data = ctx.objects.by_alias(ctx.guild.id, argument)
-        if not oid:
-            raise commands.BadArgument(f"Unknown alias {argument}.")
+        catid = find_aliased_category_id(ctx, argument)
 
-        if not data.get("cc"):
-            raise commands.BadArgument(f"Alias {argument} doesn't refer to a category.")
-
-        return await commands.CategoryChannelConverter().convert(ctx, str(data["cc"]))
+        return await commands.CategoryChannelConverter().convert(ctx, str(catid))
