@@ -236,7 +236,7 @@ class Board(Blimp.Cog):
             ]
 
             if not possible_reactions:
-                return
+                continue
 
             max_count = max(possible_reactions, key=lambda react: react.count).count
             reaction = [
