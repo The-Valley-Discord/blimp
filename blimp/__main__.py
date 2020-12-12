@@ -4,6 +4,7 @@ import base64
 import logging
 import re
 from configparser import ConfigParser
+from importlib import metadata
 from string import Template
 from typing import Optional
 
@@ -72,7 +73,7 @@ async def on_ready():
     "Hello world."
     bot.log.info(f"Logged in as {bot.user}")
 
-    global ONCE_LOCK
+    global ONCE_LOCK  # pylint: disable=global-statement
     if not ONCE_LOCK:
         bot.add_cog(cogs.Reminders(bot))
         bot.owner_id = (await bot.application_info()).owner.id
@@ -105,8 +106,9 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
 
             For detailed help on any command, you can use `{signature(_help)}`. You may also find
             useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
-            is [open-source]({ctx.bot.config['info']['source']}). This instance is running on
-            {len(ctx.bot.guilds)} servers with {len(ctx.bot.users)} members."""
+            is [open-source]({ctx.bot.config['info']['source']}). This instance is running version
+            {metadata.version('blimp')} and is active on {len(ctx.bot.guilds)} servers with
+            {len(ctx.bot.users)} members."""
         )
 
         all_commands = ""
