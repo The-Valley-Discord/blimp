@@ -1,7 +1,8 @@
 import json
 import re
+import sqlite3
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import discord
 from discord.ext import commands
@@ -111,6 +112,60 @@ class Board(Blimp.Cog):
         )
 
         await ctx.reply(f"*Deleted board configuration for {channel.mention}.*")
+
+    @commands.command(parent=board)
+    async def view(
+        self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel]
+    ):
+        """Display currently Board configuration of either one channel or all channels in this
+        server.
+
+        `channel` is the channel whose Board configuration to display. Can be left empty to list all
+        active Boards in this server."""
+
+        def format_data(row: sqlite3.Row) -> dict:
+            "format a board_configuration row"
+            data = json.loads(row["data"])
+            channel = ctx.bot.get_channel(ctx.objects.by_oid(row["oid"])["tc"])
+            return {
+                "name": f"Board: #{channel}\n",
+                "value": f"Emoji: {ctx.bot.get_emoji(data[0]) or data[0]}\n"
+                f"Minimum Reacts: {data[1]}\n"
+                f"Limit to new posts: {row['post_age_limit'] is not None}",
+            }
+
+        if channel:
+            board_data = ctx.database.execute(
+                "SELECT * FROM board_configuration WHERE oid=:oid",
+                {"oid": ctx.objects.by_data(tc=channel.id)},
+            ).fetchone()
+            if not board_data:
+                raise UnableToComply(f"{channel.mention} is not a Board.")
+
+            await ctx.reply(
+                embed=discord.Embed(color=ctx.Color.GOOD).add_field(
+                    **format_data(board_data)
+                )
+            )
+
+        else:
+            rows = ctx.database.execute(
+                "SELECT * FROM board_configuration WHERE guild_oid=:oid",
+                {"oid": ctx.objects.by_data(g=ctx.guild.id)},
+            ).fetchall()
+
+            if not rows:
+                await ctx.reply(
+                    "There are no Boards are configured on this server.",
+                    color=ctx.Color.I_GUESS,
+                )
+                return
+
+            embed = discord.Embed(color=ctx.Color.GOOD)
+            for row in rows:
+                embed.add_field(**format_data(row))
+
+            await ctx.reply(embed=embed)
 
     @staticmethod
     def format_message(
