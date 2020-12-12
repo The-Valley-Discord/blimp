@@ -123,6 +123,10 @@ class Tools(Blimp.Cog):
             exec(compiled, environment)  # pylint: disable=exec-used
             self.last_eval_result = await environment["apply"]()
 
+            if self.last_eval_result is None:
+                await ctx.message.add_reaction("✅")
+                return
+
             if environment["plain"]:
                 await ctx.reply(self.last_eval_result)
             else:
