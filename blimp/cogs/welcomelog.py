@@ -65,7 +65,9 @@ class WelcomeLog(Blimp.Cog):
         if old and old["join_data"]:
             data = json.loads(old["join_data"])
             old_channel = ctx.objects.by_oid(data[0])["tc"]
-            logging_embed.add_field(name="Old", value=f"<#{old_channel}>\n{data[1]}")
+            logging_embed.add_field(
+                name="Old", value=f"<#{old_channel}>```toml\n{data[1]}```"
+            )
 
         ctx.database.execute(
             """INSERT INTO welcome_configuration(oid, join_data) VALUES(:oid, json(:data))
@@ -76,15 +78,44 @@ class WelcomeLog(Blimp.Cog):
             },
         )
 
-        logging_embed.add_field(name="New", value=f"<#{channel.id}>\n{greeting}")
+        logging_embed.add_field(
+            name="New", value=f"<#{channel.id}>```toml\n{greeting}```"
+        )
         await self.bot.post_log(ctx.guild, embed=logging_embed)
 
-        await ctx.reply("*Overwrote welcome configuration, example message follows.*")
+        await ctx.reply("Overwrote Welcome configuration, example message follows:")
         await ctx.send(
             **create_message_dict(
                 Template(greeting).safe_substitute(
                     self.member_variables(channel.guild.me)
                 )
+            )
+        )
+
+    @commands.command(parent=welcome, name="view")
+    async def w_view(self, ctx: Blimp.Context):
+        "View the current configuration for user-facing join messages."
+
+        if not ctx.privileged_modify(ctx.guild):
+            raise Unauthorized()
+
+        old = ctx.database.execute(
+            "SELECT * FROM welcome_configuration WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(g=ctx.guild.id)},
+        ).fetchone()
+        if not old or not old["join_data"]:
+            raise UnableToComply("Welcome isn't configured for this guild.")
+
+        data = json.loads(old["join_data"])
+        old_channel = ctx.objects.by_oid(data[0])["tc"]
+        await ctx.reply(
+            f"Welcome messages are posted into <#{old_channel}>, using this configuration:```toml\n"
+            + data[1]
+            + "```\nExample message follows:"
+        )
+        await ctx.send(
+            **create_message_dict(
+                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me))
             )
         )
 
@@ -106,7 +137,7 @@ class WelcomeLog(Blimp.Cog):
 
         await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Welcome.")
 
-        await ctx.reply("*Deleted welcome configuration.*")
+        await ctx.reply("Deleted welcome configuration.")
 
     @Blimp.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -173,7 +204,9 @@ class WelcomeLog(Blimp.Cog):
         if old and old["leave_data"]:
             data = json.loads(old["leave_data"])
             old_channel = ctx.objects.by_oid(data[0])["tc"]
-            logging_embed.add_field(name="Old", value=f"<#{old_channel}>\n{data[1]}")
+            logging_embed.add_field(
+                name="Old", value=f"<#{old_channel}>```toml\n{data[1]}```"
+            )
 
         ctx.database.execute(
             """INSERT INTO welcome_configuration(oid, leave_data) VALUES(:oid, json(:data))
@@ -184,15 +217,44 @@ class WelcomeLog(Blimp.Cog):
             },
         )
 
-        logging_embed.add_field(name="New", value=f"<#{channel.id}>\n{greeting}")
+        logging_embed.add_field(
+            name="New", value=f"<#{channel.id}>```toml\n{greeting}```"
+        )
         await self.bot.post_log(ctx.guild, embed=logging_embed)
 
-        await ctx.reply("*Overwrote goodbye configuration, example message follows.*")
+        await ctx.reply("Overwrote Goodbye configuration, example message follows:")
         await ctx.send(
             **create_message_dict(
                 Template(greeting).safe_substitute(
                     self.member_variables(channel.guild.me)
                 )
+            )
+        )
+
+    @commands.command(parent=goodbye, name="view")
+    async def g_view(self, ctx: Blimp.Context):
+        "View the current configuration for user-facing leave messages."
+
+        if not ctx.privileged_modify(ctx.guild):
+            raise Unauthorized()
+
+        old = ctx.database.execute(
+            "SELECT * FROM welcome_configuration WHERE oid=:oid",
+            {"oid": ctx.objects.by_data(g=ctx.guild.id)},
+        ).fetchone()
+        if not old or not old["leave_data"]:
+            raise UnableToComply("Goodbye isn't configured for this guild.")
+
+        data = json.loads(old["leave_data"])
+        old_channel = ctx.objects.by_oid(data[0])["tc"]
+        await ctx.reply(
+            f"Goodbye messages are posted into <#{old_channel}>, using this configuration:```toml\n"
+            + data[1]
+            + "```\nExample message follows:"
+        )
+        await ctx.send(
+            **create_message_dict(
+                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me))
             )
         )
 
@@ -214,7 +276,7 @@ class WelcomeLog(Blimp.Cog):
 
         await self.bot.post_log(ctx.guild, f"{ctx.author} disabled Goodbye.")
 
-        await ctx.reply("*Deleted goodbye configuration.*")
+        await ctx.reply("Deleted Goodbye configuration.")
 
     @Blimp.Cog.listener()
     async def on_member_remove(self, member: discord.Member):

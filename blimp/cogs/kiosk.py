@@ -35,10 +35,12 @@ class Kiosk(Blimp.Cog):
         return result
 
     def render_emoji_pairs(
-        self, pairs: List[Tuple[Union[int, str], Union[int, discord.Role]]], separator: str
+        self,
+        pairs: List[Tuple[Union[int, str], Union[int, discord.Role]]],
+        separator: str,
     ) -> str:
         """Turn the stored data into a human-readable representation.
-        
+
         Expects any combination of [("unicode_emoji", <Role Object>), (custom emoji id, role id)]"""
 
         result = []
