@@ -107,7 +107,7 @@ class Triggers(Blimp.Cog):
 
     @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        "On reaction creation, check if we should add roles and do so."
+        "On reaction creation, check if we should invoke a command and do so."
         if not payload.guild_id or payload.user_id == self.bot.user.id:
             return
 

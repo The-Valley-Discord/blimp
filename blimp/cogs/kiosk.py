@@ -182,7 +182,9 @@ class Kiosk(Blimp.Cog):
         text = f"kiosk{ctx.bot.suffix} update {msg.channel.id}-{msg.id} {pair_string}"
 
         await ctx.reply(
-            text, subtitle="Automagically invoking this command…", color=ctx.Color.AUTOMATIC_BLUE
+            text,
+            subtitle="Automagically invoking this command…",
+            color=ctx.Color.AUTOMATIC_BLUE,
             )
 
         async with ctx.typing():
