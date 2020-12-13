@@ -34,6 +34,7 @@ class Tickets(Blimp.Cog):
         last_ticket_number: int,
         transcript_channel: MaybeAliasedTextChannel,
         is_creator_staff: bool,
+        dm_transcript_to_users: bool,
         per_user_limit: Optional[int],
     ):
         """Update a Ticket category, overwriting its setup entirely.
@@ -49,6 +50,9 @@ class Tickets(Blimp.Cog):
         `is_creator_staff` determines if the creator of a ticket should be allowed to perform
         staff-only actions (deleting and adding/removing members). Depending on your use case, this
         may or may not be desirable.
+
+        `dm_transcript_to_users` determines if the transcript should get DMd to every user added to
+        the ticket instead of just being posted into `transcript_channel`.
 
         `per_user_limit` is an optional maximum number of Tickets a single unprivileged user can
         have in this category. If they exceed it, BLIMP will refuse to open further Tickets."""
@@ -72,16 +76,17 @@ class Tickets(Blimp.Cog):
                 value=f"Last Ticket: {old['count']}\n"
                 f"Transcripts: {await self.bot.represent_object(transcript_obj)}\n"
                 f"Creator is Staff: {bool(old['can_creator_close'])}\n"
+                f"DM Transcript to Users: {bool(old['dm_transcript'])}\n"
                 f"Per-User Limit: {old['per_user_limit']}",
             )
 
         ctx.database.execute(
             """INSERT OR REPLACE INTO
             ticket_categories(category_oid, guild_oid, count, transcript_channel_oid,
-                per_user_limit, can_creator_close)
+                per_user_limit, can_creator_close, dm_transcript)
 
             VALUES(:category_oid, :guild_oid, :count, :transcript_channel_oid, :per_user_limit,
-                :can_creator_close)""",
+                :can_creator_close, :dm_transcript)""",
             {
                 "category_oid": ctx.objects.make_object(cc=category.id),
                 "guild_oid": ctx.objects.make_object(g=category.guild.id),
@@ -91,6 +96,7 @@ class Tickets(Blimp.Cog):
                 ),
                 "per_user_limit": per_user_limit,
                 "can_creator_close": is_creator_staff,
+                "dm_transcript": dm_transcript_to_users,
             },
         )
 
@@ -99,6 +105,7 @@ class Tickets(Blimp.Cog):
             value=f"Last Ticket: {last_ticket_number}\n"
             f"Transcripts: {transcript_channel.mention}\n"
             f"Creator is Staff: {is_creator_staff}\n"
+            f"DM Transcript to Users: {dm_transcript_to_users}\n"
             f"Per-User Limit: {per_user_limit}",
         )
 
@@ -360,9 +367,17 @@ class Tickets(Blimp.Cog):
             )
         )
 
+        added_users = ctx.database.execute(
+            """SELECT user_id FROM ticket_participants WHERE channel_oid=:channel_oid""",
+            {
+                "channel_oid": ctx.objects.make_object(tc=channel.id),
+            },
+        ).fetchall()
+
+        added_users = [ctx.bot.get_user(uid) for (uid,) in added_users]
+
         with tempfile.TemporaryFile(mode="r+") as temp:
             messages = await Transcript.write_transcript(temp, channel)
-            temp.seek(0)
 
             participants = {message.author for message in messages}
             archive_embed.add_field(
@@ -370,10 +385,20 @@ class Tickets(Blimp.Cog):
                 value="\n".join(user.mention for user in participants),
             )
 
-            await transcript_channel.send(
-                embed=archive_embed,
-                file=discord.File(fp=temp, filename=f"{channel.name}.html"),
-            )
+            targets = [transcript_channel]
+            if category["dm_transcript"]:
+                targets.extend(added_users)
+
+            for target in targets:
+                try:
+                    temp.seek(0)
+                    await target.send(
+                        embed=archive_embed,
+                        file=discord.File(fp=temp, filename=f"{channel.name}.html"),
+                    )
+                except discord.HTTPException as ex:
+                    if isinstance(target, discord.TextChannel):
+                        raise ex
 
         with ctx.database as trans:
             trans.execute(
