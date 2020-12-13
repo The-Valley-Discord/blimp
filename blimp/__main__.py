@@ -106,7 +106,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
 
             For detailed help on any command, you can use `{signature(_help)}`. You may also find
             useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
-            is [open-source]({ctx.bot.config['info']['source']}). This instance is running version
+            is [open-source]({ctx.bot.config['info']['source']}). This instance runs version
             {metadata.version('blimp')} and is active on {len(ctx.bot.guilds)} servers with
             {len(ctx.bot.users)} members."""
         )
