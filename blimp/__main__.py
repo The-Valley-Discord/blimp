@@ -47,6 +47,7 @@ for cog in [
     cogs.Triggers,
     cogs.WelcomeLog,
     cogs.Kiosk,
+    cogs.Wizard,
 ]:
     bot.add_cog(cog(bot))
 
