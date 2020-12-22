@@ -5,7 +5,11 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import discord
 from discord.ext import commands
 
-from .cogs.alias import find_aliased_channel_id, find_aliased_message_id
+from .cogs.alias import (
+    find_aliased_category_id,
+    find_aliased_channel_id,
+    find_aliased_message_id,
+)
 from .customizations import Blimp, maybe
 
 
@@ -38,6 +42,9 @@ class Progress:
         self.embed.add_field(name=name, value=value, inline=False)
         await self.message.edit(embed=self.embed)
 
+    def delete_last_stage(self):
+        self.embed.remove_field(len(self.embed.fields) - 1)
+
     async def edit_last_stage(
         self, name: Optional[str], value: Optional[str], inline: Optional[bool]
     ):
@@ -45,7 +52,7 @@ class Progress:
         "no change"."""
 
         field = self.embed.fields[-1]
-        self.embed.remove_field(len(self.embed.fields) - 1)
+        self.delete_last_stage()
         self.embed.add_field(
             name=name or field.name,
             value=value or field.value,
@@ -132,7 +139,7 @@ class AutoProgress(Progress):
 
     async def start(self) -> Optional[Dict[str, Any]]:
         await super(AutoProgress, self).start()
-        return await self.proceed(self.steps)
+        return await self.proceed(*self.steps)
 
     async def proceed(self, *steps) -> Optional[Dict[str, Any]]:
         "Ask the user to input the `steps` in order of definition."
@@ -168,6 +175,26 @@ def wait_for_channel(
         return discord.utils.find(
             lambda c: string == str(c.id) or string == c.mention or string == c.name,
             ctx.guild.channels,
+        )
+
+    return impl
+
+
+def wait_for_category(
+    ctx: Blimp.Context,
+) -> Callable[[str], Optional[discord.CategoryChannel]]:
+    "Returns a `Progress.wait_for` transformer that matches category channels."
+
+    def impl(string: str) -> Optional[discord.CategoryChannel]:
+        aliased_cat = maybe(
+            lambda: find_aliased_category_id(ctx, string), commands.BadArgument
+        )
+        if aliased_cat:
+            return ctx.bot.get_channel(aliased_cat)
+
+        return discord.utils.find(
+            lambda c: string == str(c.id) or string == c.mention or string == c.name,
+            ctx.guild.categories,
         )
 
     return impl
