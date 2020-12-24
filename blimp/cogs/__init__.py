@@ -12,3 +12,4 @@ from .tickets import Tickets
 from .tools import Tools
 from .triggers import Triggers
 from .welcomelog import WelcomeLog
+from .wizard import Wizard

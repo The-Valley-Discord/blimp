@@ -51,6 +51,11 @@ def maybe(
         return instead
 
 
+async def cid_mid_to_message(ctx: Blimp.Context, tup: Tuple) -> discord.Message:
+    channel = ctx.bot.get_channel(tup[0])
+    return await channel.fetch_message(tup[1])
+
+
 class Blimp(commands.Bot):
     """
     Instead of using a prefix like... normal bots, Blimp checks if the first
