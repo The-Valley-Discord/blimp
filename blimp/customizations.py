@@ -5,7 +5,7 @@ import re
 import sqlite3
 from copy import copy
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, Tuple, TypeVar, Union
 
 import discord
 from discord import Activity, ActivityType
@@ -49,12 +49,6 @@ def maybe(
         return the_letter_after_kappa()
     except acceptable_error as _ex:  # pylint: disable=broad-except
         return instead
-
-
-async def cid_mid_to_message(ctx: Blimp.Context, tup: Tuple) -> discord.Message:
-    channel = ctx.bot.get_channel(tup[0])
-    return await channel.fetch_message(tup[1])
-
 
 class Blimp(commands.Bot):
     """
@@ -300,6 +294,11 @@ class Blimp(commands.Bot):
 
         channel = self.objects.by_oid(configuration["channel_oid"])["tc"]
         await self.Context.reply(self.get_channel(channel), *args, **kwargs)
+
+
+async def cid_mid_to_message(ctx: Blimp.Context, tup: Tuple) -> discord.Message:
+    channel = ctx.bot.get_channel(tup[0])
+    return await channel.fetch_message(tup[1])
 
 
 class ParseableDatetime(datetime):
