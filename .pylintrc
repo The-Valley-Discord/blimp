@@ -6,4 +6,5 @@ init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.app
 # missing-module-docstring: effectively all modules here just contain one class
 # bad-continuation: black wants it the other way
 # logging-fstring-interpolation: better readability, main concern is irrelevant to this
-disable=missing-module-docstring,bad-continuation,logging-fstring-interpolation
+# unsubscriptable-object: false positive for 3.9 type annotations, cf. https://github.com/PyCQA/pylint/issues/3882
+disable=missing-module-docstring,bad-continuation,logging-fstring-interpolation,unsubscriptable-object

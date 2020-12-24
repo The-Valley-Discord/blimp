@@ -1,21 +1,9 @@
 import json
 
-import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, Unauthorized
-from ..progress import (
-    AutoProgress,
-    display_emoji,
-    message_id_to_message,
-    wait_for_bool,
-    wait_for_category,
-    wait_for_channel,
-    wait_for_emoji,
-    wait_for_message_id,
-    wait_for_number,
-    wait_for_role,
-)
+from ..progress import CanceledError, ProgressII, display
 
 
 class Wizard(Blimp.Cog):
@@ -32,103 +20,76 @@ class Wizard(Blimp.Cog):
         if not ctx.privileged_modify(ctx.guild):
             raise Unauthorized()
 
-        progress = AutoProgress(
+        progress = ProgressII(
             ctx,
             "Create or Update a Board",
-            ctx.bot.get_command("board" + ctx.bot.suffix).help,
-            (
+            ctx.bot.get_command(f"board{ctx.bot.suffix}").help,
+        )
+        await progress.update()
+
+        try:
+            channel = await progress.input(
                 "Channel",
-                "Please start by typing which channel you wish to create or edit a Board in.",
-                wait_for_channel(ctx),
-                lambda channel: channel.mention,
-            ),
-        )
-        results = await progress.start()
-        if not results:
-            return
-
-        old = ctx.database.execute(
-            "SELECT * FROM board_configuration WHERE oid=:oid",
-            {"oid": ctx.objects.by_data(tc=results["Channel"].id)},
-        ).fetchone()
-
-        if old:
-            await progress.edit_last_stage(
+                "Please start by typing the channel you wish to create or edit a Board in.",
+                ProgressII.InputKindOption.CHANNEL,
                 None,
-                f"{results['Channel'].mention} — Board configuration already exists, updating.",
+            )
+
+            old = ctx.database.execute(
+                "SELECT * FROM board_configuration WHERE oid=:oid",
+                {"oid": ctx.objects.by_data(tc=channel.id)},
+            ).fetchone()
+            data = None
+            if old:
+                data = json.loads(old["data"])
+
+            progress.edit_last_field(
+                None,
+                f"{channel.mention} — "
+                + (
+                    "Board configuration already exists, updating."
+                    if old
+                    else "No prior configuration, creating new Board."
+                ),
                 False,
             )
-            data = json.loads(old["data"])
-            results |= await progress.proceed(
-                (
-                    "Emoji",
-                    "Now, please type which emoji should cause messages to get posted into the "
-                    "Board. If you don't care about any particular emoji, answer `any`.\n"
-                    f"The current emoji is {ctx.bot.get_emoji(data[0]) or data[0]}.",
-                    wait_for_emoji,
-                    display_emoji,
-                ),
-                (
-                    "Minimum Count",
-                    "Almost done! Please type how many emoji of the same type should be "
-                    "required before a message gets reposted.\n"
-                    f"The current minimum count is {data[1]}.",
-                    wait_for_number(),
-                    str,
-                ),
-                (
-                    "Old Messages",
-                    "Finally, please type if messages that are older than now should be able "
-                    "to get reposted. This may be undesirable e.g. if you are migrating from "
-                    "another bot's starboard.\nCurrently, messages "
-                    + ("can't " if old["post_age_limit"] else "can ")
-                    + "be reposted.",
-                    wait_for_bool(),
-                    str,
-                ),
+
+            emoji = await progress.input(
+                "Emoji",
+                "Now, please type which emoji should cause messages to get posted into the Board. "
+                "You can also type `any`, in which case BLIMP will only consider the reaction count"
+                "and not the emoji itself.",
+                ProgressII.InputKindOption.EMOJI,
+                (ctx.bot.get_emoji(data[0]) or data[0]) if old else None,
             )
 
-        else:
-            await progress.edit_last_stage(
-                None,
-                f"{results['Channel'].mention} — No prior configuration, creating new Board.",
-                False,
-            )
-            results |= await progress.proceed(
-                (
-                    "Emoji",
-                    "Now, please type which emoji should cause messages to get posted into the "
-                    "Board. If you don't care about any particular emoji, answer `any`.",
-                    wait_for_emoji,
-                    display_emoji,
-                ),
-                (
-                    "Minimum Count",
-                    "Almost done! Please type how many emoji of the same type should be required "
-                    "before a message gets reposted.",
-                    wait_for_number(),
-                    str,
-                ),
-                (
-                    "Old Messages",
-                    "Finally, please type if messages that are older than now should be able to "
-                    "get reposted. This may be undesirable e.g. if you are migrating from another "
-                    "bot's starboard.",
-                    wait_for_bool(),
-                    str,
-                ),
+            min_count = await progress.input(
+                "Minimum Count",
+                "Almost done! Please type how many emoji of the same type should be required before"
+                "a message gets reposted.",
+                ProgressII.InputKindOption.INTEGER,
+                data[1] if old else None,
             )
 
-        if not "Old Messages" in results:
-            return
+            old_messages = await progress.input(
+                "Old Messages",
+                "Finally, please type if messages that are older than now should be able to get "
+                "reposted. This may be undesirable e.g. if you are migrating from another bot's "
+                "starboard.",
+                ProgressII.InputKindOption.BOOL,
+                old["post_age_limit"] if old else None,
+            )
 
-        command = (
-            f"board{ctx.bot.suffix} update {results['Channel'].mention} "
-            f"{display_emoji(results['Emoji'])}  {results['Minimum Count']} "
-            + str(not results["Old Messages"])
-        )
+            command = (
+                f"board{ctx.bot.suffix} update {channel.mention} {display(emoji)}  {min_count} "
+                # "not" because the actual db value is if they _shouldn't_ be reposted
+                + str(not old_messages)
+            )
 
-        await progress.confirm_execute(command)
+            await progress.confirm_execute(command)
+
+        except CanceledError:
+            pass
 
     @commands.command(parent=wizard)
     async def kiosk(self, ctx: Blimp.Context):
@@ -137,149 +98,130 @@ class Wizard(Blimp.Cog):
         if not ctx.privileged_modify(ctx.guild):
             raise Unauthorized()
 
-        progress = AutoProgress(
+        progress = ProgressII(
             ctx,
             "Create or Update a Kiosk",
             ctx.bot.get_command("kiosk" + ctx.bot.suffix).help,
-            (
-                "Message",
-                "Please start by linking the message you want to edit as a Kiosk.",
-                wait_for_message_id(ctx),
-                lambda tup: "Fetching message…",
-            ),
         )
-        results = await progress.start()
-        if not results:
-            return
+        await progress.update()
 
         try:
-            message = await message_id_to_message(ctx, results["Message"])
-        except discord.HTTPException:
-            progress.embed.color = ctx.Color.BAD
-            await progress.edit_last_stage("❌ Message", "Unknown message.", None)
-            return
-
-        message_link = await ctx.bot.represent_object({"m": results["Message"]})
-
-        await progress.edit_last_stage(None, message_link, None)
-
-        row = ctx.database.execute(
-            "SELECT * FROM rolekiosk_entries WHERE oid=:oid",
-            {"oid": ctx.objects.by_data(m=results["Message"])},
-        ).fetchone()
-
-        role_pairs = []
-        if row:
-            await progress.edit_last_stage(
+            message = await progress.input(
+                "Message",
+                "Please start by linking the message you want to edit as a Kiosk.",
+                ProgressII.InputKindOption.MESSAGE,
                 None,
-                f"{message_link} — Kiosk configuration already exists, updating.",
-                False,
             )
-            data = json.loads(row["data"])
-            results |= await progress.proceed(
-                (
+            cid_mid = [message.channel.id, message.id]
+
+            old = ctx.database.execute(
+                "SELECT * FROM rolekiosk_entries WHERE oid=:oid",
+                {"oid": ctx.objects.by_data(m=cid_mid)},
+            ).fetchone()
+            data = None
+            if old:
+                data = json.loads(old["data"])
+
+            message_link = await ctx.bot.represent_object({"m": cid_mid})
+            progress.edit_last_field(
+                None,
+                f"{message_link} — "
+                + (
+                    "Kiosk configuration already exists, updating."
+                    if old
+                    else "No prior configuration, creating new Kiosk."
+                ),
+                None,
+            )
+
+            role_pairs = []
+
+            if old:
+                do_append = await progress.input_choice(
                     "Append?",
                     f"The following {len(data)} reaction-role pairs already exist in this kiosk:\n"
                     + ctx.bot.get_cog("Kiosk").render_emoji_pairs(data, " ")
                     + "\nPlease type whether you want to `append` to this list or `overwrite` it.",
-                    lambda string: (
-                        (string == "append")
-                        if string in ("append", "overwrite")
-                        else None
-                    ),
-                    str,
+                    ("append", "overwrite"),
+                    "append",
                 )
-            )
-            if "Append?" in results:
-                if results["Append?"]:
+                if do_append == "append":
                     role_pairs.extend(data)
-            else:
-                return
 
-        else:
-            await progress.edit_last_stage(
-                None,
-                f"{message_link} — No prior configuration, creating new Kiosk.",
+            progress.add_field(
+                "➡️ Pending Configuration",
+                ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " ") or "—",
                 False,
             )
 
-        await progress.add_stage(
-            "➡️ Pending Configuration",
-            ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " ") or "—",
-        )
+            await progress.update()
 
-        while True:
-            if len(role_pairs) == 20:
-                await ctx.reply(
-                    "Discord doesn't support more than twenty reactions per message, no further "
-                    "pairs will be accepted."
-                )
-                break
+            while True:
+                if len(role_pairs) == 20:
+                    await ctx.reply(
+                        "Discord doesn't support more than twenty reactions per message, no "
+                        "further pairs will be accepted."
+                    )
+                    break
 
-            emoji_key = f"Emoji {len(role_pairs)+1}"
-            role_key = f"Role {len(role_pairs)+1}"
+                emoji_name = f"Emoji {len(role_pairs)+1}"
+                role_name = f"Role {len(role_pairs)+1}"
 
-            pair_dict = await progress.proceed(
-                (
-                    emoji_key,
+                emoji = await progress.input(
+                    emoji_name,
                     "Please type which emoji the Kiosk should offer for the next role.\n"
-                    f"Type 'done{ctx.bot.suffix}' to confirm the above configuration and continue.",
-                    wait_for_emoji,
-                    display_emoji,
+                    f"Type `done{ctx.bot.suffix}` to confirm the above configuration and continue.",
+                    ProgressII.InputKindOption.EMOJI,
+                    None,
                 )
-            )
-            if not emoji_key in pair_dict:
-                return
-            if f"done{ctx.bot.suffix}" in pair_dict.values():
-                break
+                if emoji == f"done{ctx.bot.suffix}":
+                    break
 
-            pair_dict |= await progress.proceed(
-                (
-                    role_key,
+                role = await progress.input(
+                    role_name,
                     "Please type which role this emoji should grant users.",
-                    wait_for_role(ctx),
-                    lambda role: role.mention,
+                    ProgressII.InputKindOption.ROLE,
+                    None,
                 )
-            )
-            if not role_key in pair_dict:
-                return
 
-            progress.delete_last_stage()
-            progress.delete_last_stage()
+                progress.delete_last_field()
+                progress.delete_last_field()
 
-            if not ctx.privileged_modify(pair_dict[role_key]):
-                await ctx.reply(
-                    f"You can't assign {pair_dict[role_key].mention} yourself. Skipping.",
-                    color=ctx.Color.BAD,
+                if not ctx.privileged_modify(role):
+                    await ctx.reply(
+                        f"You can't assign {role.mention} yourself. Skipping.",
+                        color=ctx.Color.BAD,
+                    )
+                    continue
+
+                if role >= ctx.guild.me.top_role:
+                    await ctx.reply(
+                        f"{role.mention} is above BLIMP's highest role and therefore "
+                        "can't be used in Kiosks. Skipping.",
+                        color=ctx.Color.BAD,
+                    )
+                    continue
+
+                role_pairs.append(
+                    (display(emoji), role),
                 )
-                continue
 
-            if pair_dict[role_key] >= ctx.guild.me.top_role:
-                await ctx.reply(
-                    f"{pair_dict[role_key].mention} is above BLIMP's highest role and therefore "
-                    "can't be used in Kiosks. Skipping.",
-                    color=ctx.Color.BAD,
+                progress.edit_last_field(
+                    None,
+                    ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " "),
+                    False,
                 )
-                continue
 
-            role_pairs.append(
-                (display_emoji(pair_dict[emoji_key]), pair_dict[role_key]),
+            progress.delete_last_field()
+            progress.edit_last_field("✅ Pending Configuration", None, None)
+
+            await progress.confirm_execute(
+                f"kiosk{ctx.bot.suffix} update {message.channel.id}-{message.id} "
+                + (ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " "))
             )
 
-            await progress.edit_last_stage(
-                None,
-                ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " "),
-                False,
-            )
-
-        progress.delete_last_stage()
-        await progress.edit_last_stage("✅ Pending Configuration", None, None)
-
-        command = f"kiosk{ctx.bot.suffix} update {message.channel.id}-{message.id} " + (
-            ctx.bot.get_cog("Kiosk").render_emoji_pairs(role_pairs, " ")
-        )
-
-        await progress.confirm_execute(command)
+        except CanceledError:
+            pass
 
     @commands.command(parent=wizard)
     async def tickets(self, ctx: Blimp.Context):
@@ -288,86 +230,150 @@ class Wizard(Blimp.Cog):
         if not ctx.privileged_modify(ctx.guild):
             raise Unauthorized()
 
-        progress = AutoProgress(
+        progress = ProgressII(
             ctx,
             "Create or Update a Ticket Category",
-            ctx.bot.get_command("ticket" + ctx.bot.suffix).help,
-            (
-                "Category",
-                "All Tickets are bound to a category and inherit permissions from it. Please type "
-                "in which category you want to create or modify Tickets configuration.",
-                wait_for_category(ctx),
-                lambda cat: cat.mention,
-            ),
+            ctx.bot.get_command(f"ticket{ctx.bot.suffix}").help,
         )
+        await progress.update()
 
-        results = await progress.start()
-        if not results:
-            return
-
-        old_category = ctx.database.execute(
-            "SELECT * FROM ticket_categories WHERE category_oid=:category_oid",
-            {"category_oid": ctx.objects.by_data(cc=results["Category"].id)},
-        ).fetchone()
-        if old_category:
-            await progress.edit_last_stage(
+        try:
+            category = await progress.input(
+                "Category",
+                "All Tickets are bound to a category and inherit permissions and settings from it. "
+                "Please type which category you want to select for Tickets.",
+                ProgressII.InputKindOption.CATEGORY,
                 None,
-                f"{results['Category'].mention}  — Ticket configuration already exists, updating.",
+            )
+
+            old = ctx.database.execute(
+                "SELECT * FROM ticket_categories WHERE category_oid=:category_oid",
+                {"category_oid": ctx.objects.by_data(cc=category.id)},
+            ).fetchone()
+
+            progress.edit_last_field(
+                None,
+                f"{category.mention} — "
+                + (
+                    "Ticket configuration already exists, updating."
+                    if old
+                    else "No prior configuration, creating new Ticket category."
+                ),
                 False,
             )
-            results |= await progress.proceed(
-                (
-                    "Last Ticket Number",
+
+            skip_category = False
+
+            if old:
+                skip_category = await progress.input(
+                    "Skip To Classes",
+                    "Do you want to skip editing the Category itself (this includes most settings) "
+                    "and proceed to editing the Ticket classes offered instead?",
+                    ProgressII.InputKindOption.BOOL,
+                    True,
+                )
+
+            if not skip_category:
+                count = await progress.input(
+                    "Most Recent Ticket Number",
                     "Please type which number the ticket opened most recently has. The next ticket "
-                    + "will have a number exactly one higher.\nCurrently set to "
-                    + str(old_category["count"])
-                    + ".",
-                    wait_for_number(),
-                    str,
-                ),
-                (
+                    "will have a number exactly one higher.",
+                    ProgressII.InputKindOption.INTEGER,
+                    old["count"] if old else 0,
+                )
+
+                transcript_channel = await progress.input(
                     "Transcript Channel",
                     "Please type the channel that transcripts should get posted into when a ticket "
-                    "is deleted.\nCurrently they get posted into "
-                    + await ctx.bot.represent_object(
-                        ctx.objects.by_oid(old_category["transcript_channel_oid"])
+                    "is deleted.",
+                    ProgressII.InputKindOption.CHANNEL,
+                    ctx.bot.get_channel(
+                        ctx.objects.by_oid(old["transcript_channel_oid"])["tc"]
                     )
-                    + ".",
-                    wait_for_channel(ctx),
-                    lambda channel: channel.mention,
-                ),
-                (
-                    "DM Transcripts",
+                    if old
+                    else None,
+                )
+
+                dm_transcript = await progress.input(
+                    "DM Transcripts?",
                     "Please type if the transcripts should be sent to all users added to the "
-                    + "ticket in addition to being posted in the transcript channel.\nCurrently "
-                    + "this "
-                    + (
-                        "is the case."
-                        if old_category["dm_transcript"]
-                        else "isn't the case."
-                    ),
-                    wait_for_bool(),
-                    str,
-                ),
-                (
-                    "Are Owners Staff?",
-                    "Please type if the Ticket's owner should be able to perform staff actions, "
-                    "i.e. adding and removing members as well as deleting the ticket.\nCurrently "
-                    + "this "
-                    + (
-                        "is the case."
-                        if old_category["can_creator_close"]
-                        else "isn't the case."
-                    ),
-                    wait_for_bool(),
-                    str,
-                ),
-                (
+                    "ticket in addition to being posted in the transcript channel.",
+                    ProgressII.InputKindOption.BOOL,
+                    old["dm_transcript"] if old else None,
+                )
+
+                creator_staff = await progress.input(
+                    "Are Creators Staff?",
+                    "Please type if the Ticket's creator should be able to perform staff actions, "
+                    "i.e. adding and removing members as well as deleting the ticket.",
+                    ProgressII.InputKindOption.BOOL,
+                    old["can_creator_close"] if old else None,
+                )
+
+                per_user_limit = await progress.input(
                     "Per-User Limit",
                     "Please type how many Tickets in this category non-staff users are allowed to "
-                    + "open at the same time. If you don't want to set a limit, type `unlimited`."
-                    + f"\nCurrently {old_category['per_user_limit'] or 'unlimited'}.",
-                    lambda s: wait_for_number()(s) or (s if s == "unlimited" else None),
-                    str,
-                ),
-            )
+                    "open at the same time. If you don't want to set a limit, type `-1`.",
+                    ProgressII.InputKindOption.INTEGER,
+                    (old["per_user_limit"] or -1) if old else None,
+                )
+                if per_user_limit == -1:
+                    per_user_limit = ""
+
+                await progress.confirm_execute(
+                    f"ticket{ctx.bot.suffix} updatecategory {category.id} {count} "
+                    f"{transcript_channel.mention} {creator_staff} {dm_transcript} "
+                    f"{per_user_limit}"
+                )
+
+            rows = ctx.database.execute(
+                "SELECT * FROM ticket_classes WHERE category_oid=:category_oid",
+                {"category_oid": ctx.objects.by_data(cc=category.id)},
+            ).fetchall()
+
+            ticket_classes = {}
+            for row in rows:
+                ticket_classes[row["name"]] = row["description"]
+
+            while True:
+                progress.embed.color = ctx.Color.AUTOMATIC_BLUE
+                choice = await progress.input(
+                    "Edit Class",
+                    f"This Category has the following {len(ticket_classes)} classes:\n"
+                    f"{', '.join([k for k, v in ticket_classes.items()])}\nPlease type which Class "
+                    "you'd like to edit.\nCreate a new Class by typing a name that doesn't exist "
+                    f"yet.\nTo exit this Wizard, type `done{ctx.bot.suffix}`.",
+                    ProgressII.InputKindOption.STRING,
+                    None,
+                )
+                if choice == f"done{ctx.bot.suffix}":
+                    progress.delete_last_field()
+                    if not ticket_classes:
+                        await ctx.reply(
+                            "You need at least one Class per Category. Please create one.",
+                            color=ctx.Color.BAD,
+                        )
+                        continue
+                    progress.embed.color = ctx.Color.GOOD
+                    await progress.offer_cleanup()
+                    return
+
+                ticket_classes[choice] = await progress.input(
+                    f"Initial Message for {choice}",
+                    "Please type which text BLIMP should post if a ticket in this category gets "
+                    f"created. [Advanced message formatting]({ctx.bot.config['info']['manual']}"
+                    "#advanced-message-formatting) is available.",
+                    ProgressII.InputKindOption.STRING,
+                    ticket_classes.get(choice),
+                )
+
+                progress.delete_last_field()
+                progress.delete_last_field()
+
+                await progress.confirm_execute(
+                    f"ticket{ctx.bot.suffix} updateclass {category.id} {choice} "
+                    f"{ticket_classes[choice]}"
+                )
+
+        except CanceledError:
+            pass
