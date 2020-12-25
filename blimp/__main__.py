@@ -41,6 +41,7 @@ for cog in [
     cogs.Logging,
     cogs.Slowmode,
     cogs.Malarkey,
+    cogs.Meta,
     cogs.Moderation,
     cogs.Tickets,
     cogs.Tools,
@@ -111,6 +112,10 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
             {metadata.version('blimp')} and is active on {len(ctx.bot.guilds)} servers with
             {len(ctx.bot.users)} members."""
         )
+
+        invite = ctx.bot.config["info"].get("support_invite")
+        if invite:
+            embed.description += f"\nYou can join the support server here: {invite}."
 
         all_commands = ""
         standalone_commands = ""

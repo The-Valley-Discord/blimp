@@ -5,6 +5,7 @@ from .board import Board
 from .kiosk import Kiosk
 from .logging import Logging
 from .malarkey import Malarkey
+from .meta import Meta
 from .moderation import Moderation
 from .reminders import Reminders
 from .slowmode import Slowmode

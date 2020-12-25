@@ -1,6 +1,7 @@
 [discord]
 # The suffix for commands the bot listens to, i.e. ping! triggers a response, ping? does not.
 suffix = !
+
 # The token for the bot; get one at https://discord.com/developers/applications
 token = keepmesecret
 
@@ -14,10 +15,19 @@ suppress = discord.gateway,discord.client
 path = ./blimp.db
 
 [info]
-# Your website, if applicable.
+# BLIMP info website. Required.
 web = https://dingenskirchen.systems/blimp
-# Your manual, if applicable.
+
+# BLIMP manual. Required.
 manual = https://dingenskirchen.systems/blimp/manual
-# The source code. If you run a version of BLIMP with modified code, you *are required to* to publish your changes.
+
+# The source code. If you run a version of BLIMP with modified code, the license BLIMP is under
+# requires you to publish your changes.
 # The easiest way to do that is to point this to a public repository with your version.
 source = https://github.com/The-Valley-Discord/blimp
+
+# The invite to your support server. May be empty.
+support_invite = https://discord.gg/abcdef
+
+# The ID of your feedback channel. May be empty, in that case "feedback!" will not work.
+feedback_id = 12345678901234567
