@@ -10,6 +10,11 @@ token = keepmesecret
 level = INFO
 suppress = discord.gateway,discord.client
 
+# The ID of your error log channel. May be empty, in that case errors will only be logged to
+# the console/syslog.
+error_log_id = 12345678901234567
+
+
 [database]
 # The path where the database is stored. Default should be ok.
 path = ./blimp.db

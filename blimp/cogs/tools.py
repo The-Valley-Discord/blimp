@@ -1,6 +1,7 @@
 import asyncio
 import pprint
 import tempfile
+import traceback
 from datetime import timedelta
 from typing import Optional, Union
 
@@ -134,7 +135,15 @@ class Tools(Blimp.Cog):
                 await ctx.reply(f"```py\n{pretty}```")
 
         except Exception as ex:  # pylint: disable=broad-except
-            await ctx.reply(f"```\n{ex}```", color=ctx.Color.BAD)
+            entries = traceback.extract_tb(ex.__traceback__)
+            for entry in entries:
+                if entry.filename == "The Empty String":
+                    entry._line = code.splitlines()[  # pylint: disable=protected-access
+                        entry.lineno - 1
+                    ]
+
+            tb_lines = "".join(traceback.format_list(entries))
+            await ctx.reply(f"```py\n{ex}\n{tb_lines}```", color=ctx.Color.BAD)
 
     @commands.command()
     async def pleasetellmehowmanypeoplehave(

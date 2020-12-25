@@ -3,6 +3,7 @@
 import base64
 import logging
 import re
+import traceback
 from configparser import ConfigParser
 from importlib import metadata
 from string import Template
@@ -202,9 +203,25 @@ async def on_command_error(ctx, error):
         ).replace("=", "")
 
         ctx.log.error(
-            f"Encountered exception during executing {ctx.command} [ID {error_id}]",
+            f"Encountered exception while executing {ctx.command} [ID {error_id}]",
             exc_info=error,
         )
+
+        try:
+            channel_id = ctx.bot.config["log"].get("error_log_id")
+            if channel_id:
+                channel = ctx.bot.get_channel(int(channel_id))
+                tb_lines = traceback.format_tb(error.__cause__.__traceback__)
+                tb_lines = "".join(tb_lines)
+
+                await channel.send(
+                    f"Encountered exception while executing {ctx.command} [ID `{error_id}`]"
+                    f"\n```py\n{error}\n{tb_lines}\n```"
+                )
+
+        except discord.HTTPException as ex:
+            ctx.log.error(f"Couldn't send error to Discord: {ex}")
+
         await ctx.reply(
             f"If you report this bug, please give us this log ID: `{error_id}`",
             title="Unable to comply, internal error.",
