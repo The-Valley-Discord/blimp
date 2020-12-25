@@ -50,6 +50,7 @@ def maybe(
     except acceptable_error as _ex:  # pylint: disable=broad-except
         return instead
 
+
 class Blimp(commands.Bot):
     """
     Instead of using a prefix like... normal bots, Blimp checks if the first
