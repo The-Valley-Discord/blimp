@@ -7,7 +7,7 @@ license = "AGPL-3.0"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-"discord.py" = "~1.5"
+"discord.py" = "~1.6"
 toml = "^0.10.1"
 
 [tool.poetry.dev-dependencies]

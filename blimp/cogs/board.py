@@ -192,9 +192,8 @@ class Board(Blimp.Cog):
 
         embed.add_field(
             name="Message",
-            value=f"{reactions[0].count}x {' '.join([str(r) for r in reactions])}"
-            f" — Posted to {msg.channel.mention} — "
-            f"[Jump]({msg.jump_url})",
+            value=f"{' '.join([str(r) for r in reactions])} **×{reactions[0].count}**"
+            f" — [Posted in #{msg.channel.name}]({msg.jump_url})"
         )
         return embed
 
