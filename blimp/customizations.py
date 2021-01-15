@@ -1,5 +1,6 @@
 import enum
 import logging
+import pathlib
 import random
 import re
 import sqlite3
@@ -198,6 +199,28 @@ class Blimp(commands.Bot):
             config["database"]["path"], isolation_level=None
         )
         self.database.row_factory = sqlite3.Row
+
+        last_migration_number = 0
+        try:
+            last_migration_number = self.database.execute(
+                "SELECT * FROM applied_migrations ORDER BY number DESC LIMIT 1;"
+            ).fetchone()[0]
+        except sqlite3.DatabaseError:
+            pass
+
+        for path in pathlib.Path(config["database"]["migrations"]).glob("*.sql"):
+            number = int(path.stem)
+            print("migration", number)
+            if number > last_migration_number:
+                self.database.executescript(
+                    f"""
+                    BEGIN TRANSACTION;
+                    {path.read_text()}
+                    INSERT INTO applied_migrations VALUES({number});
+                    COMMIT;
+                    """
+                )
+                print("actually did it")
 
         self.objects = BlimpObjects(self.database)
 

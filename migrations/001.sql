@@ -1,9 +1,13 @@
-CREATE TABLE IF NOT EXISTS objects (
+CREATE TABLE applied_migrations (
+    number INTEGER PRIMARY KEY
+);
+
+CREATE TABLE objects (
     oid INTEGER PRIMARY KEY,
     data STRING NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS aliases (
+CREATE TABLE aliases (
     gid INTEGER NOT NULL,
     alias STRING NOT NULL,
     oid INTEGER,
@@ -11,20 +15,20 @@ CREATE TABLE IF NOT EXISTS aliases (
     PRIMARY KEY (gid, alias)
 );
 
-CREATE TABLE IF NOT EXISTS rolekiosk_entries (
+CREATE TABLE rolekiosk_entries (
     oid INTEGER PRIMARY KEY,
     data STRING NOT NULL,
     FOREIGN KEY (oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS welcome_configuration (
+CREATE TABLE welcome_configuration (
     oid INTEGER PRIMARY KEY,
     join_data STRING,
     leave_data STRING,
     FOREIGN KEY (oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS board_configuration (
+CREATE TABLE board_configuration (
     oid INTEGER PRIMARY KEY,
     guild_oid INTEGER NOT NULL,
     data STRING NOT NULL,
@@ -33,14 +37,14 @@ CREATE TABLE IF NOT EXISTS board_configuration (
     FOREIGN KEY (guild_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS board_entries (
+CREATE TABLE board_entries (
     oid INTEGER PRIMARY KEY,
     original_oid INTEGER NOT NULL UNIQUE,
     FOREIGN KEY (oid) REFERENCES objects(oid),
     FOREIGN KEY (original_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS reminders_entries (
+CREATE TABLE reminders_entries (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     message_oid INTEGER NOT NULL,
@@ -49,21 +53,21 @@ CREATE TABLE IF NOT EXISTS reminders_entries (
     FOREIGN KEY (message_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS logging_configuration (
+CREATE TABLE logging_configuration (
     guild_oid INTEGER PRIMARY KEY,
     channel_oid INTEGER,
     FOREIGN KEY (guild_oid) REFERENCES objects(oid),
     FOREIGN KEY (channel_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS slowmode_configuration (
+CREATE TABLE slowmode_configuration (
     channel_oid INTEGER PRIMARY KEY,
     secs UNSIGNED INTEGER NOT NULL,
     ignore_privileged_users BOOL NOT NULL,
     FOREIGN KEY (channel_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS slowmode_entries (
+CREATE TABLE slowmode_entries (
     channel_oid INTEGER NOT NULL,
     user_oid INTEGER NOT NULL,
     timestamp DATE NOT NULL,
@@ -72,7 +76,7 @@ CREATE TABLE IF NOT EXISTS slowmode_entries (
     PRIMARY KEY (channel_oid, user_oid)
 );
 
-CREATE TABLE IF NOT EXISTS channelban_entries (
+CREATE TABLE channelban_entries (
     channel_oid INTEGER NOT NULL,
     guild_oid INTEGER NOT NULL,
     user_oid INTEGER NOT NULL,
@@ -86,7 +90,7 @@ CREATE TABLE IF NOT EXISTS channelban_entries (
     PRIMARY KEY (channel_oid, user_oid)
 );
 
-CREATE TABLE IF NOT EXISTS ticket_categories (
+CREATE TABLE ticket_categories (
     category_oid INTEGER PRIMARY KEY,
     guild_oid INTEGER NOT NULL,
     count INTEGER NOT NULL,
@@ -99,7 +103,7 @@ CREATE TABLE IF NOT EXISTS ticket_categories (
     FOREIGN KEY (transcript_channel_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS ticket_classes (
+CREATE TABLE ticket_classes (
     category_oid INTEGER NOT NULL,
     name STRING NOT NULL,
     description STRING,
@@ -108,7 +112,7 @@ CREATE TABLE IF NOT EXISTS ticket_classes (
     PRIMARY KEY (category_oid, name)
 );
 
-CREATE TABLE IF NOT EXISTS ticket_entries (
+CREATE TABLE ticket_entries (
     channel_oid INTEGER PRIMARY KEY,
     category_oid INTEGER NOT NULL,
     creator_id INTEGER NOT NULL,
@@ -118,7 +122,7 @@ CREATE TABLE IF NOT EXISTS ticket_entries (
     FOREIGN KEY (channel_oid) REFERENCES objects(oid)
 );
 
-CREATE TABLE IF NOT EXISTS ticket_participants (
+CREATE TABLE ticket_participants (
     channel_oid INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
 
@@ -126,7 +130,7 @@ CREATE TABLE IF NOT EXISTS ticket_participants (
     PRIMARY KEY (channel_oid, user_id)
 );
 
-CREATE TABLE IF NOT EXISTS trigger_entries (
+CREATE TABLE trigger_entries (
     message_oid INTEGER NOT NULL,
     emoji STRING NOT NULL,
     command STRING NOT NULL,
@@ -135,7 +139,7 @@ CREATE TABLE IF NOT EXISTS trigger_entries (
     PRIMARY KEY (message_oid, emoji)
 );
 
-CREATE TABLE IF NOT EXISTS post_entries (
+CREATE TABLE post_entries (
     message_oid INTEGER NOT NULL,
     text STRING NOT NULL,
 
@@ -143,6 +147,3 @@ CREATE TABLE IF NOT EXISTS post_entries (
     PRIMARY KEY (message_oid)
 );
 
--- schema update 2020-12-13
--- add a column to ticket categories to determine if we DM the transcript to all added users
-ALTER TABLE ticket_categories ADD COLUMN dm_transcript BOOLEAN NOT NULL DEFAULT FALSE;

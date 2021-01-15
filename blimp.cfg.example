@@ -19,6 +19,9 @@ error_log_id = 12345678901234567
 # The path where the database is stored. Default should be ok.
 path = ./blimp.db
 
+# The folder where the migrations are stored.
+migrations = ./migrations
+
 [info]
 # BLIMP info website. Required.
 web = https://dingenskirchen.systems/blimp
