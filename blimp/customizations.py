@@ -1,11 +1,11 @@
 import enum
 import logging
-import pathlib
 import random
 import re
 import sqlite3
 from copy import copy
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, TypeVar, Union
 
 import discord
@@ -208,9 +208,8 @@ class Blimp(commands.Bot):
         except sqlite3.DatabaseError:
             pass
 
-        for path in pathlib.Path(config["database"]["migrations"]).glob("*.sql"):
+        for path in sorted(Path(config["database"]["migrations"]).glob("*.sql")):
             number = int(path.stem)
-            print("migration", number)
             if number > last_migration_number:
                 self.database.executescript(
                     f"""
@@ -220,7 +219,7 @@ class Blimp(commands.Bot):
                     COMMIT;
                     """
                 )
-                print("actually did it")
+                self.log.info(f"Applied migration {number}")
 
         self.objects = BlimpObjects(self.database)
 
