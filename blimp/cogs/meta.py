@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 import discord
 from discord.ext import commands
 
@@ -22,8 +24,8 @@ class Meta(Blimp.Cog):
 
         feedback_channel = ctx.bot.get_channel(int(feedback_channel_id))
 
-        await feedback_channel.send(
-            embed=discord.Embed(description=text, color=ctx.Color.I_GUESS)
+        embed = (
+            discord.Embed(description=text, color=ctx.Color.I_GUESS)
             .set_author(
                 name=f"{ctx.author} ({ctx.author.id})",
                 icon_url=ctx.author.avatar_url,
@@ -33,6 +35,22 @@ class Meta(Blimp.Cog):
                 icon_url=ctx.guild.icon_url if ctx.guild else ctx.bot.user.avatar_url,
             )
         )
+
+        if ctx.bot.config["info"]["source"].startswith("https://github.com"):
+            url = (
+                ctx.bot.config["info"]["source"]
+                + "/issues/new"
+                + "?title="
+                + quote("Discord Feedback: …")
+                + "&body="
+                + quote(text)
+                + quote(f"\n\nFeedback submitted by {ctx.author}.")
+            )
+            if not len(url) > 1000:
+                embed.add_field(name="Create Issue", value=f"[→ GitHub]({url})")
+
+
+        await feedback_channel.send(embed=embed)
 
         await ctx.reply(
             "Thanks for your feedback! We'll do our best to keep you posted on the status of your "
