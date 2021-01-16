@@ -49,6 +49,12 @@ class Meta(Blimp.Cog):
             if not len(url) > 1000:
                 embed.add_field(name="Create Issue", value=f"[→ GitHub]({url})")
 
+        embed.add_field(
+            name="Reply",
+            value=f"post{ctx.bot.suffix} {ctx.channel.id} reference = {ctx.message.id}\n"
+            + 'content = ""',
+            inline=False,
+        )
 
         await feedback_channel.send(embed=embed)
 
