@@ -88,7 +88,8 @@ class WelcomeLog(Blimp.Cog):
             **create_message_dict(
                 Template(greeting).safe_substitute(
                     self.member_variables(channel.guild.me)
-                )
+                ),
+                ctx.channel,
             )
         )
 
@@ -115,7 +116,8 @@ class WelcomeLog(Blimp.Cog):
         )
         await ctx.send(
             **create_message_dict(
-                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me))
+                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me)),
+                ctx.channel,
             )
         )
 
@@ -158,7 +160,8 @@ class WelcomeLog(Blimp.Cog):
 
         await channel.send(
             **create_message_dict(
-                Template(data[1]).safe_substitute(self.member_variables(member))
+                Template(data[1]).safe_substitute(self.member_variables(member)),
+                channel,
             )
         )
 
@@ -227,7 +230,8 @@ class WelcomeLog(Blimp.Cog):
             **create_message_dict(
                 Template(greeting).safe_substitute(
                     self.member_variables(channel.guild.me)
-                )
+                ),
+                channel,
             )
         )
 
@@ -254,7 +258,8 @@ class WelcomeLog(Blimp.Cog):
         )
         await ctx.send(
             **create_message_dict(
-                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me))
+                Template(data[1]).safe_substitute(self.member_variables(ctx.guild.me)),
+                ctx.channel,
             )
         )
 
@@ -296,6 +301,7 @@ class WelcomeLog(Blimp.Cog):
 
         await channel.send(
             **create_message_dict(
-                Template(data[1]).safe_substitute(self.member_variables(member))
+                Template(data[1]).safe_substitute(self.member_variables(member)),
+                channel,
             )
         )

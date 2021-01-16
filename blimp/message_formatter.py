@@ -4,18 +4,23 @@ from toml import TomlDecodeError, loads
 from .customizations import Blimp
 
 
-def create_message_dict(text: str) -> dict:
+def create_message_dict(text: str, channel: discord.TextChannel) -> dict:
     "Turn a string into a dict that can be deconstructed into a message create/edit call."
 
     try:
-        return message_dict_from_toml(loads(text))
+        return message_dict_from_toml(loads(text), channel)
     except TomlDecodeError:
         return {"content": text}
 
 
-def message_dict_from_toml(toml: dict) -> dict:
+def message_dict_from_toml(toml: dict, channel: discord.TextChannel) -> dict:
     "Turn a TOML-supplied dict into message create/edit call dict."
     output = {"content": toml.get("content")}
+
+    if toml.get("reference"):
+        output["reference"] = discord.MessageReference(
+            message_id=int(toml["reference"]), channel_id=channel.id
+        )
 
     embed_data = toml.get("embed")
     if embed_data:

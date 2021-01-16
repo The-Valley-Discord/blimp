@@ -254,7 +254,7 @@ class Tools(Blimp.Cog):
             pass
 
         if isinstance(where, discord.TextChannel):
-            message = await where.send(**create_message_dict(text))
+            message = await where.send(**create_message_dict(text, where))
             ctx.database.execute(
                 "INSERT INTO post_entries(message_oid, text) VALUES(:oid, :text)",
                 {
@@ -285,7 +285,7 @@ class Tools(Blimp.Cog):
                     "oid": ctx.objects.by_data(m=[where.channel.id, where.id]),
                 },
             )
-            await where.edit(**create_message_dict(text))
+            await where.edit(**create_message_dict(text, where.channel))
             await ctx.bot.post_log(
                 where.guild,
                 embed=discord.Embed(

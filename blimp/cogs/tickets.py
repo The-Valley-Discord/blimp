@@ -293,7 +293,9 @@ class Tickets(Blimp.Cog):
         )
         await initial_message.pin()
         await ticket_channel.purge(limit=1, check=lambda m: m.author == self.bot.user)
-        await ticket_channel.send(**create_message_dict(actual_class["description"]))
+        await ticket_channel.send(
+            **create_message_dict(actual_class["description"], ticket_channel)
+        )
         ctx.database.execute(
             """INSERT INTO
             trigger_entries(message_oid, emoji, command)
