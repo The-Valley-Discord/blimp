@@ -1,3 +1,4 @@
+import sqlite3
 import tempfile
 from datetime import timedelta
 from typing import Optional
@@ -473,22 +474,28 @@ class Tickets(Blimp.Cog):
         )
 
         for member in members:
-            await channel.edit(
-                overwrites={
-                    **channel.overwrites,
-                    member: discord.PermissionOverwrite(read_messages=True),
-                },
-                reason=str(ctx.author),
-            )
-            ctx.database.execute(
-                """INSERT INTO ticket_participants(channel_oid, user_id)
-                VALUES(:channel_oid, :user_id)""",
-                {
-                    "channel_oid": ctx.objects.make_object(tc=channel.id),
-                    "user_id": member.id,
-                },
-            )
-            await ctx.reply(f"Added {member.mention}.")
+            try:
+                await channel.edit(
+                    overwrites={
+                        **channel.overwrites,
+                        member: discord.PermissionOverwrite(read_messages=True),
+                    },
+                    reason=str(ctx.author),
+                )
+                ctx.database.execute(
+                    """INSERT INTO ticket_participants(channel_oid, user_id)
+                    VALUES(:channel_oid, :user_id)""",
+                    {
+                        "channel_oid": ctx.objects.make_object(tc=channel.id),
+                        "user_id": member.id,
+                    },
+                )
+                await ctx.reply(f"Added {member.mention}.")
+            except sqlite3.IntegrityError:
+                await ctx.reply(
+                    f"{member.mention} has already been added.",
+                    color=ctx.Color.I_GUESS,
+                )
 
     @commands.command(parent=ticket)
     async def remove(
