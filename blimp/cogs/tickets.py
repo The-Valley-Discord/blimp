@@ -184,10 +184,22 @@ class Tickets(Blimp.Cog):
     ):
         """Open a new ticket.
 
-        `category` is the channel category to open a ticket in.
+        `category` is the channel category to open a ticket in. You need to be able to see the
+        category in order to open Tickets in it.
 
         `ticket_class` is the class the new ticket should have. If the category only has one, this
         can be left out."""
+
+        # Since we can't actually change the perms *on the category*, since all ticket channels
+        # would inherit them, check if they're able to see the category with an unmodified client by
+        # checking if they can see any channel in it
+        if not any(
+            [
+                channel.permissions_for(ctx.author).read_messages
+                for channel in category.channels
+            ]
+        ):
+            raise Unauthorized()
 
         with ctx.database as trans:
             ticket_category = trans.execute(
