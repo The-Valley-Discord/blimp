@@ -8,6 +8,7 @@ from .malarkey import Malarkey
 from .meta import Meta
 from .moderation import Moderation
 from .reminders import Reminders
+from .sig import SIG
 from .slowmode import Slowmode
 from .tickets import Tickets
 from .tools import Tools

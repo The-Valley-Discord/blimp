@@ -50,6 +50,7 @@ for cog in [
     cogs.WelcomeLog,
     cogs.Kiosk,
     cogs.Wizard,
+    cogs.SIG,
 ]:
     bot.add_cog(cog(bot))
 
