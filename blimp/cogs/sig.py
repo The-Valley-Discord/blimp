@@ -54,7 +54,7 @@ class SIG(Blimp.Cog):
         for channel in channels:
             if not channel.permissions_for(ctx.author).read_messages:
                 raise Unauthorized()
-                
+
             try:
                 ctx.database.execute(
                     "INSERT INTO sig_entries(channel_oid, user_id) VALUES(:channel_oid, :user_id)",
