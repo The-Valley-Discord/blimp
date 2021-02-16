@@ -92,8 +92,16 @@ class Board(Blimp.Cog):
         await ctx.reply(f"*Overwrote board configuration for {channel.mention}.*")
 
     @commands.command(parent=board)
-    async def disable(self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel):
-        "Disable a Board and delete its configuration."
+    async def disable(
+        self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel]
+    ):
+        """Disable a Board and delete its configuration.
+
+        `channel` is the channel whose Board to disable. If left empty, BLIMP works with the current
+        channel."""
+
+        if not channel:
+            channel = ctx.channel
 
         if not ctx.privileged_modify(channel.guild):
             raise Unauthorized()
@@ -114,11 +122,87 @@ class Board(Blimp.Cog):
         await ctx.reply(f"*Deleted board configuration for {channel.mention}.*")
 
     @commands.command(parent=board)
+    async def exclude(
+        self, ctx: Blimp.Context, channels: commands.Greedy[MaybeAliasedTextChannel]
+    ):
+        """Exclude some channels from all Boards on this server. No messages posted in an excluded
+        channel will be re-posted onto any Board.
+
+        `channels` are the channels to exclude. If left empty, BLIMP will work with the current
+        channel."""
+
+        if not channels:
+            channels = [ctx.channel]
+
+        channels = [
+            channel for channel in channels if ctx.privileged_modify(channel.guild)
+        ]
+
+        for channel in channels:
+            try:
+                ctx.database.execute(
+                    """INSERT INTO board_exclusions(channel_oid, guild_oid)
+                    VALUES(:channel_oid, :guild_oid)""",
+                    {
+                        "channel_oid": ctx.objects.make_object(tc=channel.id),
+                        "guild_oid": ctx.objects.make_object(g=channel.guild.id),
+                    },
+                )
+                await ctx.bot.post_log(
+                    channel.guild,
+                    f"{ctx.author} excluded {channel.mention} from Boards.",
+                )
+                await ctx.reply(f"Excluded {channel.mention} from future Board posts.")
+            except sqlite3.IntegrityError:
+                await ctx.reply(
+                    f"{channel.mention} is already excluded from Boards.",
+                    color=ctx.Color.I_GUESS,
+                )
+
+    @commands.command(parent=board)
+    async def unexclude(
+        self, ctx: Blimp.Context, channels: commands.Greedy[MaybeAliasedTextChannel]
+    ):
+        """Stop excluding some channels from the Board module. Messages in this channel will then be
+        able to get re-posted onto Boards again.
+
+        `channels` are the channels to stop excluding. If left empty, BLIMP will work with the
+        current channel."""
+
+        if not channels:
+            channels = [ctx.channel]
+
+        channels = [
+            channel for channel in channels if ctx.privileged_modify(channel.guild)
+        ]
+
+        for channel in channels:
+            if not ctx.database.execute(
+                "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
+                {"channel_oid": ctx.objects.by_data(tc=channel.id)},
+            ).fetchone():
+                await ctx.reply(
+                    f"Can't un-exclude {channel.mention} as it wasn't excluded.",
+                    color=ctx.Color.I_GUESS,
+                )
+                continue
+
+            ctx.database.execute(
+                "DELETE FROM board_exclusions WHERE channel_oid=:channel_oid",
+                {"channel_oid": ctx.objects.by_data(tc=channel.id)},
+            )
+            await ctx.bot.post_log(
+                channel.guild,
+                f"{ctx.author} un-excluded {channel.mention} from Boards.",
+            )
+            await ctx.reply(f"Stopped excluding {channel.mention} from Board posts.")
+
+    @commands.command(parent=board)
     async def view(
         self, ctx: Blimp.Context, channel: Optional[MaybeAliasedTextChannel]
     ):
         """Display currently Board configuration of either one channel or all channels in this
-        server.
+        server. If all configurations are listed, will also list excluded channels.
 
         `channel` is the channel whose Board configuration to display. Can be left empty to list all
         active Boards in this server."""
@@ -161,7 +245,22 @@ class Board(Blimp.Cog):
                 )
                 return
 
+            excluded = ctx.database.execute(
+                "SELECT channel_oid FROM board_exclusions WHERE guild_oid=:oid",
+                {"oid": ctx.objects.by_data(g=ctx.guild.id)},
+            ).fetchall()
+            excluded_text = ""
+            for exclusion in excluded:
+                channel = await ctx.bot.represent_object(
+                    ctx.objects.by_oid(exclusion["channel_oid"])
+                )
+                excluded_text += channel + "\n"
+
             embed = discord.Embed(color=ctx.Color.GOOD)
+            embed.add_field(
+                name="Excluded Channels",
+                value=excluded_text or "No channels are excluded.",
+            )
             for row in rows:
                 embed.add_field(**format_data(row))
 
@@ -263,6 +362,12 @@ class Board(Blimp.Cog):
                     and orig_channel == board_channel
                 ):
                     continue
+
+                if self.bot.database.execute(
+                    "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
+                    {"channel_oid": self.bot.objects.by_data(tc=orig_channel.id)},
+                ).fetchone():
+                    return
 
                 board_msg = await board_channel.send(
                     "", embed=self.format_message(orig_message, reaction)
