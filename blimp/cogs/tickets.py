@@ -490,7 +490,7 @@ class Tickets(Blimp.Cog):
                 await channel.edit(
                     overwrites={
                         **channel.overwrites,
-                        member: discord.PermissionOverwrite(read_messages=True),
+                        member: discord.PermissionOverwrite(read_messages=True, send_messages=True),
                     },
                     reason=str(ctx.author),
                 )
