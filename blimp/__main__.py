@@ -103,6 +103,9 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
     embed = discord.Embed(color=ctx.Color.I_GUESS, title="BLIMP Manual")
 
     if not subject:
+        link = discord.utils.oauth_url(
+            ctx.bot.user.id, permissions=discord.Permissions(administrator=True)
+        )
         embed.description = process_docstrings(
             f"""This is the *[BLIMP]({ctx.bot.config['info']['web']}) Levitating Intercommunication
             Management Programme*, a general-purpose management bot for Discord.
@@ -112,7 +115,9 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
             useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
             is [open-source]({ctx.bot.config['info']['source']}). This instance runs version
             {metadata.version('blimp')} and is active on {len(ctx.bot.guilds)} servers with
-            {len(ctx.bot.users)} members."""
+            {len(ctx.bot.users)} members.
+
+            You can invite BLIMP to your server using [this link]({link})."""
         )
 
         invite = ctx.bot.config["info"].get("support_invite")
