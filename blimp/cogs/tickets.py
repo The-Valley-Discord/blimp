@@ -198,7 +198,7 @@ class Tickets(Blimp.Cog):
                 channel.permissions_for(ctx.author).read_messages
                 for channel in category.channels
             ]
-        ):
+        ) and not ctx.privileged_modify(category):
             raise Unauthorized()
 
         with ctx.database as trans:
