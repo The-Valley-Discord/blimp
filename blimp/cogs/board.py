@@ -281,7 +281,15 @@ class Board(Blimp.Cog):
         )
         embed.set_author(name=msg.author, icon_url=msg.author.avatar_url)
 
-        if len(msg.attachments) > 0:
+        # if the message's only an URL that discord already previews inline, pretend that it
+        # actually was an attachment by embedding it and clearing the description
+        if msg.embeds and msg.embeds[0].type == "image":
+            embed.set_image(url=msg.embeds[0].url)
+
+            if msg.embeds[0].url == msg.content:
+                embed.description = ""
+
+        if msg.attachments:
             if msg.attachments[0].height:
                 embed.set_image(url=msg.attachments[0].url)
             else:
