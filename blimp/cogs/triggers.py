@@ -10,11 +10,13 @@ from .alias import MaybeAliasedMessage
 class Triggers(Blimp.Cog):
     "The Big Red Button."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def trigger(self, ctx: Blimp.Context):
         """Triggers allow your users to invoke pre-set commands by reacting to a specific message.
         BLIMP uses this to allow easy ticket deletion. The possibilities, however, are limitless.
         Commands are always ran as the user that reacts to the post."""
+
+        await ctx.invoke_command("help trigger")
 
     @commands.command(parent=trigger)
     async def update(

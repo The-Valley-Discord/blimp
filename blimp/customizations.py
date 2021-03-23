@@ -6,6 +6,7 @@ import sqlite3
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from string import Template
 from typing import Any, Callable, Optional, Tuple, TypeVar, Union
 
 import discord
@@ -263,6 +264,20 @@ class Blimp(commands.Bot):
 
         return " "
 
+    def process_docstrings(self, text: str) -> str:
+        "Turn a raw function docstring into a help text for display"
+
+        return re.sub(
+            r"(.+)\n *",
+            r"\1 ",
+            Template(text).safe_substitute(
+                {
+                    "manual": self.config["info"]["manual"],
+                    "sfx": self.config["discord"]["suffix"],
+                }
+            ),
+        )
+
     async def represent_object(self, data: dict) -> str:
         """
         Create something the user can click on that gets them to an object.
@@ -320,6 +335,10 @@ class Blimp(commands.Bot):
 
 
 async def cid_mid_to_message(ctx: Blimp.Context, tup: Tuple) -> discord.Message:
+    """Helper function for Progress instances needing a message (which would be fetched async,
+    which gives us problems with discordpy), returns the Message object identified by a
+    (channel_id, message_id) pair."""
+
     channel = ctx.bot.get_channel(tup[0])
     return await channel.fetch_message(tup[1])
 

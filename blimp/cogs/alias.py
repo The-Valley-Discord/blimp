@@ -21,11 +21,13 @@ class Alias(Blimp.Cog):
         if len([ch for ch in string if ch.isspace()]) > 0:
             raise UnableToComply(f"Alias {string} contains whitespace.")
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def alias(self, ctx: Blimp.Context):
         """Aliases allow you to refer to e.g. messages or channels using simple, server-specific
         codes like `'rules` or `'the_bread_message`. This way you don't need to remember unwieldly
         Discord IDs like `526166150749618178`."""
+
+        await ctx.invoke_command("alias list")
 
     @commands.command(parent=alias)
     async def make(

@@ -14,10 +14,12 @@ from .alias import MaybeAliasedTextChannel
 class Board(Blimp.Cog):
     "Building monuments to all your sins."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def board(self, ctx: Blimp.Context):
         """A Board is a channel that gets any messages that get enough of certain reactions reposted
         into it. Also known as "starboard" on other, sadly land-bound, bots."""
+
+        await ctx.invoke_command("board view")
 
     @commands.command(parent=board)
     async def update(

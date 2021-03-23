@@ -75,12 +75,14 @@ class Reminders(Blimp.Cog):
                     {"id": entry["id"]},
                 )
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def reminders(self, ctx: Blimp.Context):
         """Reminders allow you to set notifications for a future self. When the time comes, BLIMP
         will ping you with a text you set and a link to the original message.
 
         **You can create reminders using `remindme$sfx`**"""
+
+        await ctx.invoke_command("reminders list")
 
     @commands.command(parent=reminders, name="list")
     async def _list(self, ctx: Blimp.Context):

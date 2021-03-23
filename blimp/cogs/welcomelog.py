@@ -23,7 +23,7 @@ class WelcomeLog(Blimp.Cog):
             "avatar": member.avatar_url,
         }
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def welcome(self, ctx: Blimp.Context):
         """Welcome allows you to greet users that join your server. The automated greeting is highly
         flexible, but probably unsuitable for security purposes. For that you probably want a
@@ -34,6 +34,8 @@ class WelcomeLog(Blimp.Cog):
         [Advanced Message Formatting]($manual#advanced-message-formatting) is available in
         greetings.
         """
+
+        await ctx.invoke_command("welcome view")
 
     @commands.command(parent=welcome, name="update")
     async def w_update(
@@ -165,7 +167,7 @@ class WelcomeLog(Blimp.Cog):
             )
         )
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def goodbye(self, ctx: Blimp.Context):
         """Goodbye allows you to see off users that leave your server. The automated goodbye is
         highly flexible, but probably unsuitable for security purposes. For that you probably want a
@@ -176,6 +178,8 @@ class WelcomeLog(Blimp.Cog):
         [Advanced Message Formatting]($manual#advanced-message-formatting) is available in
         goodbye messages.
         """
+
+        await ctx.invoke_command("goodbye view")
 
     @commands.command(parent=goodbye, name="update")
     async def g_update(

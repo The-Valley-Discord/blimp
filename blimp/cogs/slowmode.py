@@ -11,11 +11,13 @@ from .alias import MaybeAliasedTextChannel
 class Slowmode(Blimp.Cog):
     "Deleting things that are just too new for your taste."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def slowmode(self, ctx: Blimp.Context):
         """BLIMP Slowmode is an extension of Discord's built-in slowmode, with arbitrary length for
         the slowmode. Once set up in a channel, BLIMP monitors all message timestamps and deletes
         messages that were posted to recently, notifying the user in question via DM."""
+
+        await ctx.invoke_command("help slowmode")
 
     @commands.command(parent=slowmode, name="set")
     async def _set(

@@ -10,10 +10,12 @@ from .alias import MaybeAliasedTextChannel
 class SIG(Blimp.Cog):
     "Like roles, but worse."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def sig(self, ctx: Blimp.Context):
         """SIGs allow channel moderators to notify active members of their channels, on an opt-in
         basis, without needing Manage Roles permission or using up role slots."""
+
+        await ctx.invoke_command("sig view")
 
     @commands.command(parent=sig)
     async def view(self, ctx: Blimp.Context):

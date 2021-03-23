@@ -12,11 +12,13 @@ from .alias import MaybeAliasedMessage
 class Kiosk(Blimp.Cog):
     "Handing out fancy badges."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def kiosk(self, ctx: Blimp.Context):
         """Kiosks allow users to pick roles by reacting to specific messages with certain reactions.
         This is frequently used for pronouns, ping roles, opt-ins or colors. Every Kiosk has its own
         set of reaction-role pairings."""
+
+        await ctx.invoke_command("help kiosk")
 
     @staticmethod
     def parse_emoji_pairs(args: List[Union[discord.Role, str]]):

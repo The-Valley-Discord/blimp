@@ -2,11 +2,9 @@
 
 import base64
 import logging
-import re
 import traceback
 from configparser import ConfigParser
 from importlib import metadata
-from string import Template
 from typing import Optional
 
 import discord
@@ -55,20 +53,6 @@ for cog in [
     bot.add_cog(cog(bot))
 
 
-def process_docstrings(text) -> str:
-    "Turn a raw function docstring into a help text for display"
-    return re.sub(
-        r"(.+)\n *",
-        r"\1 ",
-        Template(text).safe_substitute(
-            {
-                "manual": bot.config["info"]["manual"],
-                "sfx": bot.config["discord"]["suffix"],
-            }
-        ),
-    )
-
-
 ONCE_LOCK = False
 
 
@@ -84,7 +68,7 @@ async def on_ready():
 
         # inserting runtime data into help
         for command in bot.walk_commands():
-            command.help = process_docstrings(command.help)
+            command.help = bot.process_docstrings(command.help)
 
         ONCE_LOCK = True
 
@@ -106,7 +90,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
         link = discord.utils.oauth_url(
             ctx.bot.user.id, permissions=discord.Permissions(administrator=True)
         )
-        embed.description = process_docstrings(
+        embed.description = ctx.bot.process_docstrings(
             f"""This is the *[BLIMP]({ctx.bot.config['info']['web']}) Levitating Intercommunication
             Management Programme*, a general-purpose management bot for Discord.
 

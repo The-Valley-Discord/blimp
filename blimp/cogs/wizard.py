@@ -9,9 +9,14 @@ from ..progress import CanceledError, ProgressII, display
 class Wizard(Blimp.Cog):
     "Hey, it looks like you're trying to use BLIMP!"
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def wizard(self, ctx: Blimp.Context):
-        "Wizards set up and configure BLIMP features for you in an interactive manner."
+        """Wizards can help you set up and configure BLIMP features interactively. Each feature has
+        its own Wizard. Wizards will ask you questions on what you want to configure, which you can
+        answer in individual messages, using the usual BLIMP syntax, and finally present you with a
+        command that can be run to achieve the change you wanted."""
+
+        await ctx.invoke_command("help wizard")
 
     @commands.command(parent=wizard)
     async def board(self, ctx: Blimp.Context):

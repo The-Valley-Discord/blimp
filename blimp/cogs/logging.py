@@ -7,7 +7,7 @@ from .alias import MaybeAliasedTextChannel
 class Logging(Blimp.Cog):
     "Watching with ten thousand eyes."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def logging(self, ctx: Blimp.Context):
         """Set up logging for your server to keep you informed on BLIMP's actions.
 
@@ -16,6 +16,8 @@ class Logging(Blimp.Cog):
         generated for individual **ticket creation and deletion**, as well as ticket **add/remove
         events**. **Channel bans** and unbans also are logged, as are changes to **channel
         names/topics** made through BLIMP."""
+
+        await ctx.invoke_command("logging view")
 
     @commands.command(parent=logging, name="set")
     async def _set(self, ctx: Blimp.Context, channel: MaybeAliasedTextChannel):

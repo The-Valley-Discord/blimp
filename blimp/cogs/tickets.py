@@ -16,7 +16,7 @@ from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel, Unautho
 class Tickets(Blimp.Cog):
     "Honorary citizen #23687, please! Don't push."
 
-    @commands.group()
+    @commands.group(invoke_without_command=True, case_insensitive=True)
     async def ticket(self, ctx: Blimp.Context):
         """Tickets are temporary private channels created by a user to, for example, request
         assistance, talk to moderators privately, or organize internal discussions. They are
@@ -25,7 +25,13 @@ class Tickets(Blimp.Cog):
         Tickets are configured on a per-category basis. These share common configuration and a
         counter. Within these categories, one can also use ticket classes to allow different
         content templates for fresh tickets. Depending on your use-case, you might not need more
-        than one class though."""
+        than one class though.
+
+
+        **Note: You probably want to use `wizard$sfx tickets` instead of using these commands
+        directly. They are a bit intimidating.**"""
+
+        await ctx.invoke_command("help ticket")
 
     @commands.command(parent=ticket)
     async def updatecategory(
