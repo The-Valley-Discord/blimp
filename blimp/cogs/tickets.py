@@ -10,7 +10,12 @@ from discord.ext import commands
 from ..customizations import Blimp
 from ..message_formatter import create_message_dict
 from ..transcript import Transcript
-from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel, Unauthorized
+from .alias import (
+    MaybeAliasedCategoryChannel,
+    MaybeAliasedTextChannel,
+    UnableToComply,
+    Unauthorized,
+)
 
 
 class Tickets(Blimp.Cog):
@@ -248,16 +253,27 @@ class Tickets(Blimp.Cog):
                         "category at once."
                     )
 
-            ticket_channel = await category.create_text_channel(
-                f"{actual_class['name']}-{(ticket_category['count'] + 1)}",
-                reason=f"Ticket in {category.name} for {ctx.author}",
-                overwrites={
-                    **category.overwrites,
-                    ctx.author: discord.PermissionOverwrite(
-                        read_messages=True, send_messages=True
-                    ),
-                },
-            )
+            ticket_channel = None
+
+            try:
+                ticket_channel = await category.create_text_channel(
+                    f"{actual_class['name']}-{(ticket_category['count'] + 1)}",
+                    reason=f"Ticket in {category.name} for {ctx.author}",
+                    overwrites={
+                        **category.overwrites,
+                        ctx.author: discord.PermissionOverwrite(
+                            read_messages=True, send_messages=True
+                        ),
+                    },
+                )
+            except discord.HTTPException as ex:
+                if "Maximum number of channels in category reached" in ex.text:
+                    raise UnableToComply(
+                        "The channel limit for this category has been reached.\nThis is a Discord "
+                        "limitation, please contact server staff."
+                    ) from ex
+                else:
+                    raise ex
 
             trans.execute(
                 "UPDATE ticket_categories SET count=:count WHERE category_oid=:category_oid",
