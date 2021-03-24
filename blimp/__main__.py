@@ -1,7 +1,7 @@
 "Actually the interesting file, init code lives here"
 
-import base64
 import logging
+import string
 import traceback
 from configparser import ConfigParser
 from importlib import metadata
@@ -162,6 +162,19 @@ async def on_command_error(ctx, error):
     Handle errors, delegating all "internal errors" (exceptions foreign to
     discordpy) to stderr and discordpy (i.e. high-level) errors to the user.
     """
+
+    def to_base_62(number: int) -> str:
+        alphabet = string.digits + string.ascii_letters
+        digits = []
+
+        div, rem = divmod(number, len(alphabet))
+        while div > 0:
+            digits.append(alphabet[rem])
+            div, rem = divmod(div, len(alphabet))
+        digits.append(alphabet[rem])
+
+        return "".join(reversed(digits))
+
     if isinstance(error, commands.CommandInvokeError) and isinstance(
         error.original, AnticipatedError
     ):
@@ -173,6 +186,7 @@ async def on_command_error(ctx, error):
             delete_after=5.0 if isinstance(original, Unauthorized) else None,
         )
         return
+
     elif isinstance(error, commands.UserInputError):
         await ctx.reply(
             str(error),
@@ -180,17 +194,25 @@ async def on_command_error(ctx, error):
             color=ctx.Color.BAD,
         )
         return
+
     elif isinstance(error, commands.CommandNotFound):
         return
-    else:
-        error_int = int(ctx.author.id) + int(ctx.message.id)
-        error_bytes = error_int.to_bytes(
-            (error_int.bit_length() + 7) // 8, byteorder="little"
+
+    elif isinstance(error.original, discord.Forbidden):
+        ctx.log.error(
+            f"Missing permissions while executing {ctx.command} in guild "
+            + getattr(ctx.guild, "id", None),
+            exc_info=error,
         )
-        error_id = str(
-            base64.urlsafe_b64encode(error_bytes),
-            encoding="utf-8",
-        ).replace("=", "")
+
+        await ctx.reply(
+            "BLIMP does not have permission to do this. Please contact server staff.",
+            title="Unable to comply.",
+            color=ctx.Color.BAD,
+        )
+
+    else:
+        error_id = to_base_62(int(ctx.author.id) + int(ctx.message.id))
 
         ctx.log.error(
             f"Encountered exception while executing {ctx.command} [ID {error_id}]",
