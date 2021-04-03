@@ -276,7 +276,7 @@ class Tools(Blimp.Cog):
                 {"oid": ctx.objects.by_data(m=[where.channel.id, where.id])},
             ).fetchone()
             if not old:
-                return
+                raise UnableToComply("That message can't be edited.")
 
             ctx.database.execute(
                 "UPDATE post_entries SET text=:text WHERE message_oid=:oid",
@@ -296,6 +296,7 @@ class Tools(Blimp.Cog):
                 .add_field(name="Old", value=old["text"])
                 .add_field(name="New", value=text),
             )
+        await ctx.message.add_reaction("✅")
 
     @commands.command()
     async def transcript(

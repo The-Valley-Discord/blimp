@@ -156,12 +156,15 @@ class Blimp(commands.Bot):
         def privileged_modify(
             self,
             subject: Union[
-                discord.TextChannel, discord.Member, discord.Guild, discord.Role
+                discord.TextChannel,
+                discord.CategoryChannel,
+                discord.Member,
+                discord.Guild,
+                discord.Role,
             ],
         ) -> bool:
-            """
-            Check if the context's user can do privileged actions on the subject.
-            """
+            "Check if the context's user can do privileged actions on the subject."
+
             if self.bot.owner_id == self.author.id:
                 return True
 
