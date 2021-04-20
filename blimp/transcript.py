@@ -1,10 +1,13 @@
 import html
+import io
 import re
 from datetime import timedelta
 from string import Template
 from typing import List, Optional
 
 import discord
+
+from .customizations import clean_timestamp
 
 
 def shrink(string):
@@ -151,7 +154,7 @@ class Transcript:
         )
     )
 
-    TRUNCATED_WARNING = "<h2>Transcript truncated at 2000 messages.</h2>"
+    TRUNCATED_WARNING = "<h2>Transcript truncated at 5000 messages.</h2>"
 
     TRANSCRIPT_FOOTER = "</section></body></html>"
 
@@ -188,43 +191,44 @@ class Transcript:
         last_message_id: Optional[int] = None,
     ) -> List[discord.Message]:
         "Write a transcript of the channel into file and return a list of all messages processed."
-        all_messages = []
-        file.write(
-            cls.TRANSCRIPT_HEADER.substitute(
-                channelname=channel.name,
-                headline=f"#{channel.name} on {channel.guild.name}",
-            )
-        )
 
+        # write the message transcript into memory first, after we have processed all messages,
+        # write a header based on the information gathered to the actual file and only then flush
+        # the messages into there
+        memory = io.StringIO()
+
+        # because channel.history() bounds args are exclusive, expand the bounds very slightly
+        # to make them inclusive
         if first_message_id:
             first_message_id = discord.Object(first_message_id - 1)
 
         if last_message_id:
             last_message_id = discord.Object(last_message_id + 1)
 
+        all_messages = []
         count = 0
+        was_truncated = False
+
         async for message in channel.history(
             oldest_first=True,
-            limit=2001,
+            limit=5001,
             after=first_message_id,
             before=last_message_id,
         ):
             count += 1
-            if count == 2001:
-                file.write(cls.TRUNCATED_WARNING)
+            if count == 5001:
+                memory.write(cls.TRUNCATED_WARNING)
+                was_truncated = True
                 break
 
             all_messages.append(message)
-            clean_timestamp = message.created_at - timedelta(
-                microseconds=message.created_at.microsecond
-            )
-            file.write(
+            memory.write(
                 cls.TRANSCRIPT_ITEM.substitute(
                     messageid=message.id,
                     authortag=str(message.author),
                     authornick=message.author.display_name,
                     authoravatar=message.author.avatar_url,
-                    timestamp=clean_timestamp,
+                    timestamp=clean_timestamp(message),
                     content=cls.fancify_content(message.clean_content)
                     + "\n".join(
                         [
@@ -238,6 +242,23 @@ class Transcript:
                 )
             )
 
+        participants = {message.author for message in all_messages}
+
+        file.write(
+            "<!--\n"
+            + f"  BLIMP Transcript of #{channel.name} ({channel.id}) "
+            + f"from {getattr(first_message_id, 'id', 'start')} to {getattr(last_message_id, 'id', 'end')}\n"
+            + f"  {count - 1} messages {'(truncated) ' if was_truncated else ''}by {len(participants)} users "
+            + f"from {clean_timestamp(all_messages[0])} to {clean_timestamp(all_messages[-1])}"
+            + "\n-->\n\n"
+        )
+        file.write(
+            cls.TRANSCRIPT_HEADER.substitute(
+                channelname=channel.name,
+                headline=f"#{channel.name} on {channel.guild.name}",
+            )
+        )
+        file.write(memory.getvalue())
         file.write(cls.TRANSCRIPT_FOOTER)
 
         return all_messages

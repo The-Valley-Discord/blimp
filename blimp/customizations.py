@@ -346,6 +346,13 @@ async def cid_mid_to_message(ctx: Blimp.Context, tup: Tuple) -> discord.Message:
     return await channel.fetch_message(tup[1])
 
 
+def clean_timestamp(obj: discord.Object) -> datetime:
+    "Helper function that extracts a second-resolution timestamp from a snowflake."
+
+    ts = discord.utils.snowflake_time(obj.id)
+    return ts - timedelta(microseconds=ts.microsecond)
+
+
 class ParseableDatetime(datetime):
     "Just datetime but with support for the discordpy converter thing."
 
