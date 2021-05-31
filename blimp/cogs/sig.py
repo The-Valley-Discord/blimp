@@ -1,6 +1,7 @@
 import sqlite3
 from typing import Optional
 
+import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, Unauthorized
@@ -129,17 +130,22 @@ class SIG(Blimp.Cog):
             {"channel_oid": ctx.objects.by_data(tc=channel.id)},
         ).fetchall()
 
+        members = [
+            discord.utils.get(ctx.guild.members, id=member_id)
+            for (member_id,) in members
+        ]
+        members = [member for member in members if member]
+
         await ctx.reply(
             f"Pinging {len(members)} {channel.mention} SIG subscribers for {ctx.author}…"
         )
+        if members:
+            blocks = [""]
+            for mention in [member.mention for member in members]:
+                if len(mention) + len(blocks[-1]) < 1996:
+                    blocks[-1] += mention + " "
+                else:
+                    blocks.append(mention)
 
-        pings = [f"<@{member}>" for (member,) in members]
-        blocks = [""]
-        for mention in pings:
-            if len(mention) + len(blocks[-1]) < 1996:
-                blocks[-1] += mention + " "
-            else:
-                blocks.append(mention)
-
-        for block in blocks:
-            await ctx.send(f"||{block.strip()}||")
+            for block in blocks:
+                await ctx.send(f"||{block.strip()}||")
