@@ -50,7 +50,7 @@ class Kiosk(Blimp.Cog):
             emoji = maybe_emoji
             if isinstance(emoji, int):
                 emoji = self.bot.get_emoji(maybe_emoji) or (
-                    "<:emoji:" + str(maybe_emoji) + ">"
+                    f"[<:emoji:{maybe_emoji}>](https://cdn.discordapp.com/emojis/{maybe_emoji}.png)"
                 )
             role_id = getattr(maybe_role, "id", maybe_role)
 
