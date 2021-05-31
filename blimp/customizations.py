@@ -350,7 +350,7 @@ def clean_timestamp(obj: discord.Object) -> datetime:
     "Helper function that extracts a second-resolution timestamp from a snowflake."
 
     timestamp = discord.utils.snowflake_time(obj.id)
-    return timestamp - timedelta(microseconds=ts.microsecond)
+    return timestamp - timedelta(microseconds=timestamp.microsecond)
 
 
 class ParseableDatetime(datetime):
