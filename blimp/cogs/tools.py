@@ -2,7 +2,6 @@ import asyncio
 import pprint
 import tempfile
 import traceback
-from datetime import timedelta
 from typing import Optional, Union
 
 import discord
@@ -304,7 +303,7 @@ class Tools(Blimp.Cog):
             )
         try:
             await ctx.message.add_reaction("✅")
-        except:  # pylint: disable=broad-except
+        except:  # pylint: disable=bare-except
             pass
 
     @commands.command()

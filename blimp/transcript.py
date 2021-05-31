@@ -1,7 +1,6 @@
 import html
 import io
 import re
-from datetime import timedelta
 from string import Template
 from typing import List, Optional
 
