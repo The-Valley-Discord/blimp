@@ -31,11 +31,19 @@ class Reminders(Blimp.Cog):
         for entry in entries:
             invoke_msg = self.bot.objects.by_oid(entry["message_oid"])["m"]
             channel = None
+            user = self.bot.get_user(entry["user_id"])
 
             try:
                 channel = self.bot.get_channel(invoke_msg[0])
-                if not channel:
-                    channel = self.bot.get_user(entry["user_id"])
+                member = channel.guild.get_member(entry["user_id"])
+
+                # if the user can't read this channel or it doesn't exist anymore, try DMs
+                if (
+                    not channel
+                    or not member
+                    or not channel.permissions_for(member).read_messages
+                ):
+                    channel = user
 
                 title = str(entry["text"])
                 extratext = ""
@@ -63,12 +71,12 @@ class Reminders(Blimp.Cog):
                         + f"\n\n**Context:** {await self.bot.represent_object({'m':invoke_msg})}",
                     ).set_footer(text=f"Reminder from {timestamp} UTC"),
                 )
-            except:  # pylint: disable=bare-except
-                self.log.warn(
+            except Exception as exc:  # pylint: disable=broad-except
+                self.log.error(
                     f"Failed to deliver reminder {entry['id']}, "
-                    f"origin {await self.bot.represent_object({'m':invoke_msg})}"
+                    f"origin {await self.bot.represent_object({'m':invoke_msg})}",
+                    exc_info=exc,
                 )
-                raise
             finally:
                 self.bot.database.execute(
                     "DELETE FROM reminders_entries WHERE id=:id",
