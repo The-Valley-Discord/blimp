@@ -1,4 +1,5 @@
 import re
+import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 
@@ -20,13 +21,13 @@ class Reminders(Blimp.Cog):
         self.execute_reminders.start()  # pylint: disable=no-member
         super().__init__(*args)
 
-    @tasks.loop(seconds=0.5)
+    @tasks.loop(seconds=1)
     async def execute_reminders(self):
         "Look at overdue reminders and send notifications out."
         cursor = self.bot.database.execute(
             "SELECT * FROM reminders_entries WHERE due < datetime('now')"
         )
-        cursor.arraysize = 5
+        cursor.arraysize = 10
         entries = cursor.fetchmany()
         for entry in entries:
             invoke_msg = self.bot.objects.by_oid(entry["message_oid"])["m"]
@@ -35,13 +36,15 @@ class Reminders(Blimp.Cog):
 
             try:
                 channel = self.bot.get_channel(invoke_msg[0])
-                member = channel.guild.get_member(entry["user_id"])
 
                 # if the user can't read this channel or it doesn't exist anymore, try DMs
                 if (
                     not channel
-                    or not member
-                    or not channel.permissions_for(member).read_messages
+                    or isinstance(channel, discord.DMChannel)
+                    or not channel.guild.get_member(entry["user_id"])
+                    or not channel.permissions_for(
+                        channel.guild.get_member(entry["user_id"])
+                    ).read_messages
                 ):
                     channel = user
 
@@ -77,6 +80,16 @@ class Reminders(Blimp.Cog):
                     f"origin {await self.bot.represent_object({'m':invoke_msg})}",
                     exc_info=exc,
                 )
+                if channel_id := self.bot.config["log"].get("error_log_id"):
+                    channel = self.bot.get_channel(int(channel_id))
+                    tb_lines = traceback.format_tb(exc.__traceback__)
+                    tb_lines = "".join(tb_lines)
+
+                    await channel.send(
+                        f"Encountered exception while delivering reminder {entry['id']}, "
+                        f"origin {await self.bot.represent_object({'m':invoke_msg})}"
+                        f"\n```py\n{exc}\n{tb_lines}\n```"
+                    )
             finally:
                 self.bot.database.execute(
                     "DELETE FROM reminders_entries WHERE id=:id",

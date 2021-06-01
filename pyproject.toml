@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blimp"
-version = "2.4.5"
+version = "2.4.6"
 description = "The BLIMP Levitating Intercommunication Management Programme, a Discord bot."
 authors = ["Cassidy Dingenskirchen <admin@15318.de>"]
 license = "AGPL-3.0"
