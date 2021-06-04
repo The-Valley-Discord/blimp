@@ -62,16 +62,18 @@ class Wizard(Blimp.Cog):
             emoji = await progress.input(
                 "Emoji",
                 "Now, please type which emoji should cause messages to get posted into the Board. "
-                "You can also type `any`, in which case BLIMP will only consider the reaction count"
-                "and not the emoji itself.",
+                "You can also type `any`, in which case BLIMP will only consider the reaction "
+                "count and not the emoji itself.\n**Note:** A message will only be reposted onto "
+                "one Board, so there can be hard-to-predict clashes between an `any` and emoji-"
+                "specific Boards running at the same time. You have been warned.",
                 ProgressII.InputKindOption.EMOJI,
                 (ctx.bot.get_emoji(data[0]) or data[0]) if old else None,
             )
 
             min_count = await progress.input(
                 "Minimum Count",
-                "Almost done! Please type how many emoji of the same type should be required before"
-                "a message gets reposted.",
+                "Almost done! Please type how many emoji of the same type should be required "
+                "before a message gets reposted.",
                 ProgressII.InputKindOption.INTEGER,
                 data[1] if old else None,
             )
@@ -292,9 +294,7 @@ class Wizard(Blimp.Cog):
                     "Please type the channel that transcripts should get posted into when a ticket "
                     "is deleted.",
                     ProgressII.InputKindOption.CHANNEL,
-                    ctx.bot.get_channel(
-                        ctx.objects.by_oid(old["transcript_channel_oid"])["tc"]
-                    )
+                    ctx.bot.get_channel(ctx.objects.by_oid(old["transcript_channel_oid"])["tc"])
                     if old
                     else None,
                 )

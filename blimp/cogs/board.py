@@ -1,14 +1,15 @@
+import asyncio
 import json
 import re
 import sqlite3
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import discord
 from discord.ext import commands
 
 from ..customizations import Blimp, UnableToComply, Unauthorized
-from .alias import MaybeAliasedTextChannel
+from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 
 
 class Board(Blimp.Cog):
@@ -125,13 +126,18 @@ class Board(Blimp.Cog):
 
     @commands.command(parent=board)
     async def exclude(
-        self, ctx: Blimp.Context, channels: commands.Greedy[MaybeAliasedTextChannel]
+        self,
+        ctx: Blimp.Context,
+        channels: commands.Greedy[
+            Union[MaybeAliasedTextChannel, MaybeAliasedCategoryChannel]
+        ],
     ):
-        """Exclude some channels from all Boards on this server. No messages posted in an excluded
-        channel will be re-posted onto any Board.
+        """Exclude some channels or categories from all Boards on this server. No messages posted
+        in an excluded channel will be re-posted onto any Board.
 
-        `channels` are the channels to exclude. If left empty, BLIMP will work with the current
-        channel."""
+        `channels` are the channels or categories to exclude. If left empty, BLIMP will work with
+        the current channel. If a category is provided, all current and future channels in that
+        category will be considered excluded as long as they remain in the category."""
 
         if not channels:
             channels = [ctx.channel]
@@ -142,11 +148,17 @@ class Board(Blimp.Cog):
 
         for channel in channels:
             try:
+                channel_argument = {}
+                if isinstance(channel, discord.CategoryChannel):
+                    channel_argument = {"cc": channel.id}
+                else:
+                    channel_argument = {"tc": channel.id}
+
                 ctx.database.execute(
                     """INSERT INTO board_exclusions(channel_oid, guild_oid)
                     VALUES(:channel_oid, :guild_oid)""",
                     {
-                        "channel_oid": ctx.objects.make_object(tc=channel.id),
+                        "channel_oid": ctx.objects.make_object(**channel_argument),
                         "guild_oid": ctx.objects.make_object(g=channel.guild.id),
                     },
                 )
@@ -163,13 +175,17 @@ class Board(Blimp.Cog):
 
     @commands.command(parent=board)
     async def unexclude(
-        self, ctx: Blimp.Context, channels: commands.Greedy[MaybeAliasedTextChannel]
+        self,
+        ctx: Blimp.Context,
+        channels: commands.Greedy[
+            Union[MaybeAliasedTextChannel, MaybeAliasedCategoryChannel]
+        ],
     ):
-        """Stop excluding some channels from the Board module. Messages in this channel will then be
-        able to get re-posted onto Boards again.
+        """Stop excluding some channels or categories from the Board module. Messages in these
+        channels will then be able to get re-posted onto Boards again.
 
-        `channels` are the channels to stop excluding. If left empty, BLIMP will work with the
-        current channel."""
+        `channels` are the channels or categories to stop excluding. If left empty, BLIMP will work
+        with the current channel."""
 
         if not channels:
             channels = [ctx.channel]
@@ -180,8 +196,12 @@ class Board(Blimp.Cog):
 
         for channel in channels:
             if not ctx.database.execute(
-                "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
-                {"channel_oid": ctx.objects.by_data(tc=channel.id)},
+                "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid "
+                "OR channel_oid=:category_oid",
+                {
+                    "channel_oid": ctx.objects.by_data(tc=channel.id),
+                    "category_oid": ctx.objects.by_data(cc=channel.id),
+                },
             ).fetchone():
                 await ctx.reply(
                     f"Can't un-exclude {channel.mention} as it wasn't excluded.",
@@ -190,8 +210,12 @@ class Board(Blimp.Cog):
                 continue
 
             ctx.database.execute(
-                "DELETE FROM board_exclusions WHERE channel_oid=:channel_oid",
-                {"channel_oid": ctx.objects.by_data(tc=channel.id)},
+                "DELETE FROM board_exclusions WHERE channel_oid=:channel_oid "
+                "OR channel_oid=:category_oid",
+                {
+                    "channel_oid": ctx.objects.by_data(tc=channel.id),
+                    "category_oid": ctx.objects.by_data(cc=channel.id),
+                },
             )
             await ctx.bot.post_log(
                 channel.guild,
@@ -306,88 +330,110 @@ class Board(Blimp.Cog):
         )
         return embed
 
+    BOARD_LOCK = asyncio.Lock()
+
     @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         "Listen for reactions and repost/update if appropriate."
 
-        objects = self.bot.objects
-
-        boards = self.bot.database.execute(
+        # fetch all boards configured for the message's guild
+        board_configurations = self.bot.database.execute(
             "SELECT * FROM board_configuration WHERE guild_oid=:guild_oid",
-            {"guild_oid": objects.by_data(g=payload.guild_id)},
+            {"guild_oid": self.bot.objects.by_data(g=payload.guild_id)},
         ).fetchall()
-        if not boards:
+        if not board_configurations:
             return
 
-        orig_channel = self.bot.get_channel(payload.channel_id)
-        orig_message = await orig_channel.fetch_message(payload.message_id)
+        message = await self.bot.get_channel(payload.channel_id).fetch_message(
+            payload.message_id
+        )
 
-        for board in boards:
-            if board[
-                "post_age_limit"
-            ] and orig_message.created_at < datetime.fromisoformat(
-                board["post_age_limit"]
-            ):
-                return
-
-            emoji, min_reacts = json.loads(board["data"])
-            min_reacts = int(min_reacts)
-            possible_reactions = [
-                react
-                for react in orig_message.reactions
-                if (
-                    emoji == "any"
-                    or emoji == react.emoji
-                    or emoji == getattr(react.emoji, "id", None)
-                )
-                and react.count >= min_reacts
-            ]
-
-            if not possible_reactions:
-                continue
-
-            max_count = max(possible_reactions, key=lambda react: react.count).count
-            reaction = [
-                react for react in possible_reactions if react.count == max_count
-            ]
-
-            to_edit = self.bot.database.execute(
-                "SELECT * FROM board_entries WHERE original_oid=:original_oid",
+        # return early if message's channel or category is excluded
+        if self.bot.database.execute(
+            "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
+            {"channel_oid": self.bot.objects.make_object(tc=payload.channel_id)},
+        ).fetchone() or (
+            message.channel.category
+            and self.bot.database.execute(
+                "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
                 {
-                    "original_oid": objects.by_data(
-                        m=[orig_message.channel.id, orig_message.id]
+                    "channel_oid": self.bot.objects.make_object(
+                        cc=message.channel.category.id
                     )
                 },
             ).fetchone()
-            if to_edit:
-                to_edit = objects.by_oid(to_edit["oid"])["m"]
-                board_msg = await self.bot.get_channel(to_edit[0]).fetch_message(
-                    to_edit[1]
-                )
-                await board_msg.edit(embed=self.format_message(orig_message, reaction))
-            else:
-                board_channel = self.bot.get_channel(objects.by_oid(board["oid"])["tc"])
+        ):
+            return
+
+        # return early if the message we're looking at was posted by blimp for a board
+        if self.bot.database.execute(
+            "SELECT * FROM board_entries WHERE oid=:oid",
+            {"oid": self.bot.objects.by_data(m=[message.channel.id, message.id])},
+        ).fetchall():
+            return
+
+        for board in board_configurations:
+            post_age_limit = board["post_age_limit"] and datetime.fromisoformat(
+                board["post_age_limit"]
+            )
+            if post_age_limit and message.created_at < post_age_limit:
+                continue
+
+            board_emoji, min_reacts = json.loads(board["data"])
+            min_reacts = int(min_reacts)
+
+            # reactions are eligible for boards if a) the board accepts all reactions or
+            # b) it's the same unicode emoji stored in the DB or
+            # c) it's a custom emoji with the same ID as stored in the DB
+            possible_reactions = [
+                r
+                for r in message.reactions
                 if (
-                    orig_message.author == orig_channel.guild.me
-                    and orig_channel == board_channel
-                ):
-                    continue
-
-                if self.bot.database.execute(
-                    "SELECT * FROM board_exclusions WHERE channel_oid=:channel_oid",
-                    {"channel_oid": self.bot.objects.by_data(tc=orig_channel.id)},
-                ).fetchone():
-                    return
-
-                board_msg = await board_channel.send(
-                    "", embed=self.format_message(orig_message, reaction)
+                    board_emoji == "any"
+                    or board_emoji == r.emoji
+                    or board_emoji == getattr(r.emoji, "id", None)
                 )
-                self.bot.database.execute(
-                    "INSERT INTO board_entries(oid, original_oid) VALUES(:oid, :original_oid)",
+                and r.count >= min_reacts
+            ]
+            if not possible_reactions:
+                continue
+
+            # get all reactions with the highest count
+            highest_count = max(possible_reactions, key=lambda react: react.count).count
+            actual_reactions = [
+                r for r in possible_reactions if r.count == highest_count
+            ]
+            embed = self.format_message(message, actual_reactions)
+
+            async with self.BOARD_LOCK:
+                if existing_board := self.bot.database.execute(
+                    "SELECT * FROM board_entries WHERE original_oid=:original_oid",
                     {
-                        "oid": objects.make_object(m=[board_channel.id, board_msg.id]),
-                        "original_oid": objects.make_object(
-                            m=[orig_channel.id, orig_message.id]
-                        ),
+                        "original_oid": self.bot.objects.by_data(
+                            m=[message.channel.id, message.id]
+                        )
                     },
-                )
+                ).fetchone():
+                    existing_board = self.bot.objects.by_oid(existing_board["oid"])["m"]
+                    board_msg = self.bot.get_channel(
+                        existing_board[0]
+                    ).get_partial_message(existing_board[1])
+                    await board_msg.edit(embed=embed)
+                else:
+                    board_channel = self.bot.get_channel(
+                        self.bot.objects.by_oid(board["oid"])["tc"]
+                    )
+
+                    board_msg = await board_channel.send("", embed=embed)
+
+                    self.bot.database.execute(
+                        "INSERT INTO board_entries(oid, original_oid) VALUES(:oid, :original_oid)",
+                        {
+                            "oid": self.bot.objects.make_object(
+                                m=[board_msg.channel.id, board_msg.id]
+                            ),
+                            "original_oid": self.bot.objects.make_object(
+                                m=[message.channel.id, message.id]
+                            ),
+                        },
+                    )
