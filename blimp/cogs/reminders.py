@@ -61,18 +61,17 @@ class Reminders(Blimp.Cog):
                     title = None
                     extratext = entry["text"]
 
-                timestamp = (
-                    discord.utils.snowflake_time(invoke_msg[1])
-                    .replace(microsecond=0, tzinfo=timezone.utc)
-                    .replace(tzinfo=None)
+                timestamp = discord.utils.snowflake_time(invoke_msg[1]).replace(
+                    microsecond=0, tzinfo=timezone.utc
                 )
                 await channel.send(
                     self.bot.get_user(entry["user_id"]).mention,
                     embed=discord.Embed(
                         title=title,
                         description=extratext
-                        + f"\n\n**Context:** {await self.bot.represent_object({'m':invoke_msg})}",
-                    ).set_footer(text=f"Reminder from {timestamp} UTC"),
+                        + f"\n\n**Reminder from** <t:{int(timestamp.timestamp())}:R> | "
+                        + (await self.bot.represent_object({"m": invoke_msg})),
+                    ),
                 )
             except Exception as exc:  # pylint: disable=broad-except
                 self.log.error(
@@ -122,10 +121,10 @@ class Reminders(Blimp.Cog):
         for rem in rems:
             invoke_msg = ctx.objects.by_oid(rem["message_oid"])
             invoke_link = await self.bot.represent_object(invoke_msg)
-            timestamp = datetime.fromisoformat(rem["due"]).replace(tzinfo=None)
-            delta = timestamp - ctx.message.created_at
-            delta = delta - timedelta(microseconds=delta.microseconds)
-            rows.append(f"#{rem['id']} **{delta} ({invoke_link})**\n{rem['text']}")
+            timestamp = datetime.fromisoformat(rem["due"])
+            rows.append(
+                f"#{rem['id']} <t:{int(timestamp.timestamp())}:R> | {invoke_link}\n{rem['text']}"
+            )
 
         await Blimp.Context.reply(ctx.author, "\n".join(rows))
 
@@ -149,7 +148,7 @@ class Reminders(Blimp.Cog):
             {"user_id": ctx.author.id, "id": number},
         )
 
-        await ctx.reply(f"*Successfully deleted reminder #{number}.*")
+        await ctx.reply(f"Successfully deleted reminder #{number}.")
 
     @commands.command()
     async def remindme(
@@ -201,5 +200,5 @@ class Reminders(Blimp.Cog):
         )
 
         await ctx.reply(
-            f"*Reminder #{cursor.lastrowid} set for {due.replace(tzinfo=None)} UTC.*"
+            f"Reminder #{cursor.lastrowid} set for <t:{int(due.timestamp())}:R>."
         )
