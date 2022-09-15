@@ -7,7 +7,7 @@ To run, you need [Nix](https://nixos.org/). BLIMP is written in Python.
 For detailed instructions on how to contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 For instructions on hosting your own instance, please see the
-[official manual's section on it](https://dingenskirchen.systems/blimp/manual/#self-hosting).
+[official manual's section on it](https://dingenskirchen.org/blimp/manual/#self-hosting).
 
 ---
 
