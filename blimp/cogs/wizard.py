@@ -294,7 +294,9 @@ class Wizard(Blimp.Cog):
                     "Please type the channel that transcripts should get posted into when a ticket "
                     "is deleted.",
                     ProgressII.InputKindOption.CHANNEL,
-                    ctx.bot.get_channel(ctx.objects.by_oid(old["transcript_channel_oid"])["tc"])
+                    ctx.bot.get_channel(
+                        ctx.objects.by_oid(old["transcript_channel_oid"])["tc"]
+                    )
                     if old
                     else None,
                 )
