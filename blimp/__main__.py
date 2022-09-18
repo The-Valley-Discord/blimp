@@ -4,7 +4,6 @@ import logging
 import string
 import traceback
 from configparser import ConfigParser
-from importlib import metadata
 from typing import Optional
 
 import discord
@@ -55,11 +54,15 @@ for cog in [
 
 ONCE_LOCK = False
 
+version = ConfigParser()
+version.read("pyproject.toml")
+version = version["tool.poetry"]["version"].strip('"')
+
 
 @bot.event
 async def on_ready():
     "Hello world."
-    bot.log.info(f"Logged in as {bot.user}")
+    bot.log.info(f"BLIMP {version} logged in as {bot.user}")
 
     global ONCE_LOCK  # pylint: disable=global-statement
     if not ONCE_LOCK:
@@ -98,7 +101,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
             For detailed help on any command, you can use `{signature(_help)}`. You may also find
             useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
             is [open-source]({ctx.bot.config['info']['source']}). This instance runs version
-            {metadata.version('blimp')} and is active on {len(ctx.bot.guilds)} servers with
+            {version} and is active on {len(ctx.bot.guilds)} servers with
             {len(ctx.bot.users)} members.
 
             You can invite BLIMP to your server using [this link]({link})."""
