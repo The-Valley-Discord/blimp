@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp, UnableToComply, Unauthorized
+from ..customizations import Blimp, UnableToComply, Unauthorized, cid_mid_to_message
 from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 
 
@@ -298,12 +298,15 @@ class Board(Blimp.Cog):
     ) -> discord.Embed:
         "Turn a message into an embed for the Board."
 
-        embed = discord.Embed(
-            description=msg.content,
-            timestamp=msg.created_at,
-            color=Blimp.Context.Color.AUTOMATIC_BLUE,
+        embed = (
+            discord.Embed(
+                description=msg.content,
+                timestamp=msg.created_at,
+                color=Blimp.Context.Color.AUTOMATIC_BLUE,
+            )
+            .set_author(name=msg.author, icon_url=msg.author.avatar_url)
+            .set_footer(text="react with ❌ to delete your own posts")
         )
-        embed.set_author(name=msg.author, icon_url=msg.author.avatar_url)
 
         # if the message's only an URL that discord already previews inline, pretend that it
         # actually was an attachment by embedding it and clearing the description
@@ -332,9 +335,37 @@ class Board(Blimp.Cog):
 
     BOARD_LOCK = asyncio.Lock()
 
+    async def process_delete_request(
+        self, board_entry: sqlite3.Row, payload: discord.RawReactionActionEvent
+    ):
+        "Delete a Board message on request of the original author"
+
+        original_obj = self.bot.objects.by_oid(board_entry["original_oid"])["m"]
+        original_msg = await self.bot.get_channel(original_obj[0]).fetch_message(
+            original_obj[1]
+        )
+        if original_msg.author.id == payload.user_id:
+            board_obj = self.bot.objects.by_oid(board_entry["oid"])["m"]
+            await (
+                await self.bot.get_channel(board_obj[0]).fetch_message(board_obj[1])
+            ).delete()
+
     @Blimp.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         "Listen for reactions and repost/update if appropriate."
+
+        # if the message we're looking at was posted by blimp for a board, check if it's a deletion request
+        if board_entry := self.bot.database.execute(
+            "SELECT * FROM board_entries WHERE oid=:oid",
+            {
+                "oid": self.bot.objects.by_data(
+                    m=[payload.channel_id, payload.message_id]
+                )
+            },
+        ).fetchall():
+            if payload.emoji.name == "❌":
+                await self.process_delete_request(board_entry[0], payload)
+            return
 
         # fetch all boards configured for the message's guild
         board_configurations = self.bot.database.execute(
