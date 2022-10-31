@@ -8,9 +8,14 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
+import toml
 
 from . import cogs
 from .customizations import AnticipatedError, Blimp, PleaseRestate, Unauthorized
+
+version = None
+with open("pyproject.toml") as f:
+    version = toml.load(f)["project"]["version"].strip('"')
 
 config = ConfigParser()
 config.read("blimp.cfg")
@@ -23,8 +28,7 @@ for source in config["log"]["suppress"].split(","):
         lambda row: row.levelno > getattr(logging, config["log"]["level"])
     )
 
-intents = discord.Intents.default()
-intents.members = True
+intents = discord.Intents.all()
 
 bot = Blimp(
     config,
@@ -33,40 +37,36 @@ bot = Blimp(
     help_command=None,
     intents=intents,
 )
-for cog in [
-    cogs.Alias,
-    cogs.Board,
-    cogs.Logging,
-    cogs.Slowmode,
-    cogs.Malarkey,
-    cogs.Meta,
-    cogs.Moderation,
-    cogs.Tickets,
-    cogs.Tools,
-    cogs.Triggers,
-    cogs.WelcomeLog,
-    cogs.Kiosk,
-    cogs.Wizard,
-    cogs.SIG,
-]:
-    bot.add_cog(cog(bot))
 
 
 ONCE_LOCK = False
-
-version = ConfigParser()
-version.read("pyproject.toml")
-version = version["tool.poetry"]["version"].strip('"')
 
 
 @bot.event
 async def on_ready():
     "Hello world."
     bot.log.info(f"BLIMP {version} logged in as {bot.user}")
+    for cog in [
+        cogs.Alias,
+        cogs.Board,
+        cogs.Logging,
+        cogs.Slowmode,
+        cogs.Malarkey,
+        cogs.Meta,
+        cogs.Moderation,
+        cogs.Tickets,
+        cogs.Tools,
+        cogs.Triggers,
+        cogs.WelcomeLog,
+        cogs.Kiosk,
+        cogs.Wizard,
+        cogs.SIG,
+    ]:
+        await bot.add_cog(cog(bot))
 
     global ONCE_LOCK  # pylint: disable=global-statement
     if not ONCE_LOCK:
-        bot.add_cog(cogs.Reminders(bot))
+        await bot.add_cog(cogs.Reminders(bot))
         bot.owner_id = (await bot.application_info()).owner.id
 
         # inserting runtime data into help

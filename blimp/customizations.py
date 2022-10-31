@@ -116,7 +116,7 @@ class Blimp(commands.Bot):
         async def reply(  # pylint: disable=too-many-arguments
             self,
             msg: str = None,
-            title: str = discord.Embed.Empty,
+            title: str = None,
             subtitle: str = None,
             color: Color = Color.GOOD,
             embed: discord.Embed = None,
@@ -124,9 +124,6 @@ class Blimp(commands.Bot):
         ):
             """Helper for sending embedded replies"""
             if not embed:
-                if not subtitle:
-                    subtitle = discord.Embed.Empty
-
                 lines = str(msg).split("\n")
                 buf = ""
                 for line in lines:
@@ -170,7 +167,7 @@ class Blimp(commands.Bot):
 
             kind = subject.__class__
             if kind in (discord.TextChannel, discord.CategoryChannel):
-                return self.author.permissions_in(subject).manage_messages
+                return subject.permissions_for(self.author).manage_messages
             if kind == discord.Member:
                 return self.author.guild_permissions.ban_users
             if kind == discord.Guild:

@@ -226,7 +226,7 @@ class Transcript:
                     messageid=message.id,
                     authortag=str(message.author),
                     authornick=message.author.display_name,
-                    authoravatar=message.author.avatar_url,
+                    authoravatar=message.author.avatar,
                     timestamp=clean_timestamp(message),
                     content=cls.fancify_content(message.clean_content)
                     + "\n".join(

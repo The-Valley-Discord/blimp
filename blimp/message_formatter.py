@@ -39,8 +39,8 @@ def message_dict_from_toml(toml: dict, channel: discord.TextChannel) -> dict:
         footer = embed_data.get("footer")
         if isinstance(footer, dict):
             output["embed"].set_footer(
-                text=footer.get("text", discord.Embed.Empty),
-                icon_url=footer.get("icon_url", discord.Embed.Empty),
+                text=footer.get("text"),
+                icon_url=footer.get("icon_url"),
             )
 
         image = embed_data.get("image_url")
@@ -54,8 +54,8 @@ def message_dict_from_toml(toml: dict, channel: discord.TextChannel) -> dict:
         author = embed_data.get("author")
         if isinstance(author, dict):
             output["embed"].set_author(
-                name=author.get("name", discord.Embed.Empty),
-                icon_url=author.get("icon_url", discord.Embed.Empty),
+                name=author.get("name"),
+                icon_url=author.get("icon_url"),
             )
 
         fields = embed_data.get("fields")

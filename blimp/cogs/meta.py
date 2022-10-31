@@ -28,11 +28,11 @@ class Meta(Blimp.Cog):
             discord.Embed(description=text, color=ctx.Color.I_GUESS)
             .set_author(
                 name=f"{ctx.author} ({ctx.author.id})",
-                icon_url=ctx.author.avatar_url,
+                icon_url=ctx.author.avatar,
             )
             .set_footer(
                 text=f"in {ctx.guild.name} ({ctx.guild.id})" if ctx.guild else "in DMs",
-                icon_url=ctx.guild.icon_url if ctx.guild else ctx.bot.user.avatar_url,
+                icon_url=ctx.guild.icon if ctx.guild else ctx.bot.user.avatar,
             )
         )
 

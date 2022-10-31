@@ -185,7 +185,7 @@ class ProgressII:
     async def update(self):
         "Push our version of the embed to discord, creating a new message if it doesn't exist yet."
         if self.message:
-            await self.message.edit(embed=self.embed)
+            self.message = await self.message.edit(embed=self.embed)
         else:
             self.message = await self.ctx.send(embed=self.embed)
 
@@ -213,7 +213,7 @@ class ProgressII:
         if default and kind == self.InputKindOption.BOOL:
             default = bool(default)
 
-        self.embed.set_footer(text=discord.Embed.Empty)
+        self.embed.set_footer(text=None)
         if default is not None:
             self.embed.set_footer(
                 text=f"↑ Default value, accept with 'ok{self.ctx.bot.suffix}'"
@@ -290,7 +290,7 @@ class ProgressII:
 
             return msg.content.casefold() in options
 
-        self.embed.set_footer(text=discord.Embed.Empty)
+        self.embed.set_footer(text=None)
         if default is not None:
             self.embed.set_footer(
                 text=f"↑ Default value, accept with 'ok{self.ctx.bot.suffix}'"
@@ -347,7 +347,7 @@ class ProgressII:
             True,
         )
         if do_cleanup:
-            with self.ctx.typing():
+            async with self.ctx.typing():
                 for message in self.input_messages:
                     await message.delete()
                 self.input_messages = []
@@ -365,7 +365,7 @@ class ProgressII:
         )
 
         if dewit:
-            with self.ctx.typing():
+            async with self.ctx.typing():
                 await self.ctx.invoke_command(command)
                 self.embed.color = self.ctx.Color.GOOD
                 self.edit_last_field(None, f"**Executed:**\n{command}", False)

@@ -304,7 +304,7 @@ class Board(Blimp.Cog):
                 timestamp=msg.created_at,
                 color=Blimp.Context.Color.AUTOMATIC_BLUE,
             )
-            .set_author(name=msg.author, icon_url=msg.author.avatar_url)
+            .set_author(name=msg.author, icon_url=msg.author.avatar)
             .set_footer(text="react with ❌ to delete your own posts")
         )
 
@@ -331,6 +331,9 @@ class Board(Blimp.Cog):
             value=f"{' '.join([str(r) for r in reactions])} **×{reactions[0].count}**"
             f" — [Posted in #{msg.channel.name}]({msg.jump_url})",
         )
+        # don't preview spoilered images
+        if embed.image and "SPOILER_" in embed.image.url:
+            embed.set_image(url=None)
         return embed
 
     BOARD_LOCK = asyncio.Lock()

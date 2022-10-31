@@ -20,7 +20,7 @@ class WelcomeLog(Blimp.Cog):
             "user": member.mention,
             "id": member.id,
             "tag": str(member),
-            "avatar": member.avatar_url,
+            "avatar": member.avatar,
         }
 
     @commands.group(invoke_without_command=True, case_insensitive=True)
