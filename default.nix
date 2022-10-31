@@ -1,11 +1,15 @@
-with import (builtins.fetchTarball {
-  # nixpkgs master on 2020-10-14
-  url =
-    "https://github.com/NixOS/nixpkgs/tarball/692d219a9312fbe3f8b34858a7ca0e32fb72bd07";
-  sha256 = "1c5sm789yr6v34lhjscmn1c93ix5cqw6cksjc2n0lrm8hjwfllry";
-}) { };
+with (import (import ./pinned-nixpkgs.nix) { });
 
-poetry2nix.mkPoetryApplication {
-  projectDir = ./.;
-  python = python39;
+python310Packages.buildPythonPackage {
+  src = builtins.path {
+    path = ./.;
+    name = "blimp";
+  };
+
+  pname = "blimp";
+  version = "2.5.0";
+
+  propagatedBuildInputs =
+    (with python310Packages; [ discordpy toml setuptools ]);
+  format = "pyproject";
 }
