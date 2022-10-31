@@ -6,9 +6,8 @@ needed and in any case appreciated.
 ## Overview
 
 BLIMP is written in Python 3.9 with the [discordpy] commands framework. For dependency management we
-use [Nix] wrapping [poetry]. Complex input beyond the capabilities of discordpy is done using
-[TOML], which is the least painful to write markup format i could come up with that has Python
-bindings.
+use [Nix]. Complex input beyond the capabilities of discordpy is done using [TOML], which is the least
+painful to write markup format i could come up with that has Python bindings.
 
 ## Getting Started: Coding
 
@@ -19,8 +18,8 @@ same work as you do accidentally. Then, you can start actually working on it:
 
 ### 1. Prerequisites
 
-If you're on Linux or Mac, you'll want [Nix], if you're on Windows, just [poetry] should do fine. If
-you don't install Nix, you will need to check that you have [Python 3.9] or later available.
+If you're on Linux or Mac, you'll want [Nix], if you're on Windows, please use WSL and follow the
+instructions equivalently. 
 
 You will need [git] in any case. You probably also want a visual git interface, e.g. that of Visual
 Studio Code (which is a fine code editor too).
@@ -37,9 +36,8 @@ button somewhere on the top right on the repository main site.
 
 ### 3. Initial Setup
 
-1. Switch over into the directory you cloned BLIMP into and spin up a development shell using either
-`nix-shell` or `poetry shell`, depending on what you installed earlier. This might take a while, so
-grab yourself a cup of tea.
+1. Switch over into the directory you cloned BLIMP into and spin up a development shell using
+`nix-shell`. This might take a while, so grab yourself a cup of tea.
 2. Open the file `blimp.cfg.example` with your text editor and update at the very least the value of
 `discord.token` with the bot token you got from Discord. Without this, your bot won't be able to log
 in. You might also want to change other values. Save the file as `blimp.cfg` in the same folder.
@@ -70,10 +68,8 @@ your previous ones.
 repository: `git pull upstream main`.
 
 [discordpy]: https://github.com/Rapptz/discord.py/
-[Python 3.9]: https://www.python.org/downloads/
 [git]: https://git-scm.com/
 [Nix]: https://nixos.org
-[poetry]: https://python-poetry.org
 [Applications page]: https://discord.com/developers/applications
 [pull requests]: https://github.com/The-Valley-Discord/blimp/pulls
 [TOML]: https://toml.io/
