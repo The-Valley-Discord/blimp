@@ -205,10 +205,8 @@ class Tickets(Blimp.Cog):
         # would inherit them, check if they're able to see the category with an unmodified client by
         # checking if they can see any channel in it
         if not any(
-            [
-                channel.permissions_for(ctx.author).read_messages
-                for channel in category.channels
-            ]
+            channel.permissions_for(ctx.author).read_messages
+            for channel in category.channels
         ) and not ctx.privileged_modify(category):
             raise Unauthorized()
 
@@ -272,8 +270,8 @@ class Tickets(Blimp.Cog):
                         "The channel limit for this category has been reached.\nThis is a Discord "
                         "limitation, please contact server staff."
                     ) from ex
-                else:
-                    raise ex
+
+                raise ex
 
             trans.execute(
                 "UPDATE ticket_categories SET count=:count WHERE category_oid=:category_oid",
@@ -324,7 +322,7 @@ class Tickets(Blimp.Cog):
                     )
                 ),
                 color=ctx.Color.AUTOMATIC_BLUE,
-            ).set_footer(text="BLIMP Tickets", icon_url=ctx.bot.user.avatar_url),
+            ).set_footer(text="BLIMP Tickets", icon_url=ctx.bot.user.avatar),
         )
         await initial_message.pin()
         await ticket_channel.purge(limit=1, check=lambda m: m.author == self.bot.user)
@@ -446,9 +444,7 @@ class Tickets(Blimp.Cog):
                 "DELETE FROM ticket_entries WHERE channel_oid = :channel_oid",
                 {"channel_oid": ctx.objects.by_data(tc=channel.id)},
             )
-            first_message = (
-                await channel.history(limit=1, oldest_first=True).flatten()
-            )[0]
+            first_message = await anext(channel.history(limit=1, oldest_first=True))
             trans.execute(
                 "DELETE FROM trigger_entries WHERE message_oid=:message_oid",
                 {"message_oid": ctx.objects.by_data(m=[channel.id, first_message.id])},

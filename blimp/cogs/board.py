@@ -8,7 +8,7 @@ from typing import List, Optional, Union
 import discord
 from discord.ext import commands
 
-from ..customizations import Blimp, UnableToComply, Unauthorized, cid_mid_to_message
+from ..customizations import Blimp, UnableToComply, Unauthorized
 from .alias import MaybeAliasedCategoryChannel, MaybeAliasedTextChannel
 
 
@@ -357,7 +357,8 @@ class Board(Blimp.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         "Listen for reactions and repost/update if appropriate."
 
-        # if the message we're looking at was posted by blimp for a board, check if it's a deletion request
+        # if the message we're looking at was posted by blimp for a board,
+        # check if it's a deletion request
         if board_entry := self.bot.database.execute(
             "SELECT * FROM board_entries WHERE oid=:oid",
             {

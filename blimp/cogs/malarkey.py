@@ -22,6 +22,7 @@ class Malarkey(Blimp.Cog):
     @commands.command()
     async def ping(self, ctx: Blimp.Context):
         "Find out if the bot's still alive. It's easier to just ping it."
+        raise ValueError()
         now = datetime.now(timezone.utc)
         pong = random.choice(self.pings)
         in_delta = now - ctx.message.created_at

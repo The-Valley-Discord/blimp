@@ -246,8 +246,11 @@ class Transcript:
         file.write(
             "<!--\n"
             + f"  BLIMP Transcript of #{channel.name} ({channel.id}) "
-            + f"from {getattr(first_message_id, 'id', 'start')} to {getattr(last_message_id, 'id', 'end')}\n"
-            + f"  {count - 1} messages {'(truncated) ' if was_truncated else ''}by {len(participants)} users "
+            + f"from {getattr(first_message_id, 'id', 'start')} "
+            + f"to {getattr(last_message_id, 'id', 'end')}\n"
+            + f"  {count - 1} messages "
+            + ("(truncated) " if was_truncated else "")
+            + f"by {len(participants)} users "
             + f"from {clean_timestamp(all_messages[0])} to {clean_timestamp(all_messages[-1])}"
             + "\n-->\n\n"
         )

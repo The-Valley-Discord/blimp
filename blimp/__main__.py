@@ -13,9 +13,9 @@ import toml
 from . import cogs
 from .customizations import AnticipatedError, Blimp, PleaseRestate, Unauthorized
 
-version = None
-with open("pyproject.toml") as f:
-    version = toml.load(f)["project"]["version"].strip('"')
+VERSION = None
+with open("pyproject.toml", encoding="utf-8") as f:
+    VERSION = toml.load(f)["project"]["version"].strip('"')
 
 config = ConfigParser()
 config.read("blimp.cfg")
@@ -45,7 +45,7 @@ ONCE_LOCK = False
 @bot.event
 async def on_ready():
     "Hello world."
-    bot.log.info(f"BLIMP {version} logged in as {bot.user}")
+    bot.log.info(f"BLIMP {VERSION} logged in as {bot.user}")
     for cog in [
         cogs.Alias,
         cogs.Board,
@@ -101,7 +101,7 @@ async def _help(ctx: Blimp.Context, *, subject: Optional[str]):
             For detailed help on any command, you can use `{signature(_help)}`. You may also find
             useful, but largely supplemental, information in the **[online manual]($manual)**. BLIMP
             is [open-source]({ctx.bot.config['info']['source']}). This instance runs version
-            {version} and is active on {len(ctx.bot.guilds)} servers with
+            {VERSION} and is active on {len(ctx.bot.guilds)} servers with
             {len(ctx.bot.users)} members.
 
             You can invite BLIMP to your server using [this link]({link})."""
@@ -190,7 +190,7 @@ async def on_command_error(ctx, error):
         )
         return
 
-    elif isinstance(error, commands.UserInputError):
+    if isinstance(error, commands.UserInputError):
         await ctx.reply(
             str(error),
             title=PleaseRestate.TEXT,
@@ -198,10 +198,10 @@ async def on_command_error(ctx, error):
         )
         return
 
-    elif isinstance(error, commands.CommandNotFound):
+    if isinstance(error, commands.CommandNotFound):
         return
 
-    elif isinstance(error.original, discord.Forbidden):
+    if isinstance(error.original, discord.Forbidden):
         ctx.log.error(
             f"Missing permissions while executing {ctx.command} in guild "
             + getattr(ctx.guild, "id", None),
@@ -215,7 +215,7 @@ async def on_command_error(ctx, error):
         )
 
     else:
-        error_id = to_base_62(int(ctx.author.id) + int(ctx.message.id))
+        error_id = to_base_62((int(ctx.author.id) + int(ctx.message.id)) // 6192)
 
         ctx.log.error(
             f"Encountered exception while executing {ctx.command} [ID {error_id}]",
