@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "discordpy~=2.0", "toml~=0.10"]
+requires = ["setuptools>=61.0", "discordpy~=2.3", "toml~=0.10"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -7,12 +7,12 @@ packages = ["blimp", "blimp.cogs"]
 
 [project]
 name = "blimp"
-version = "2.5.0"
+version = "2.5.1"
 authors = [
   { name="Cass Dingenskirchen", email="admin@dingenskirchen.org" },
 ]
 description = "The BLIMP Levitating Intercommunication Management Programme, a tool for discord"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.scripts]
 blimp = "blimp:__main__.main"

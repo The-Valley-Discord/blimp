@@ -1,15 +1,15 @@
 with (import (import ./pinned-nixpkgs.nix) { });
 
-python310Packages.buildPythonPackage {
+python311Packages.buildPythonPackage {
   src = builtins.path {
     path = ./.;
     name = "blimp";
   };
 
   pname = "blimp";
-  version = "2.5.0";
+  version = "2.5.1";
 
   propagatedBuildInputs =
-    (with python310Packages; [ discordpy toml setuptools ]);
+    (with python311Packages; [ discordpy toml setuptools ]);
   format = "pyproject";
 }
