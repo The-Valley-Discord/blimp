@@ -7,7 +7,7 @@ python311Packages.buildPythonPackage {
   };
 
   pname = "blimp";
-  version = "2.5.2";
+  version = "2.6";
 
   propagatedBuildInputs =
     (with python311Packages; [ discordpy toml setuptools ]);

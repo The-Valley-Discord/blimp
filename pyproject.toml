@@ -7,7 +7,7 @@ packages = ["blimp", "blimp.cogs"]
 
 [project]
 name = "blimp"
-version = "2.5.2"
+version = "2.6.0"
 authors = [
   { name="Cass Dingenskirchen", email="admin@dingenskirchen.org" },
 ]
