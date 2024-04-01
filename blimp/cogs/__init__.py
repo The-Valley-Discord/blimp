@@ -2,6 +2,7 @@ from discord.ext import commands
 
 from .alias import Alias
 from .board import Board
+from .coops import Coops
 from .kiosk import Kiosk
 from .logging import Logging
 from .malarkey import Malarkey

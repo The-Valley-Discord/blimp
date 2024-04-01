@@ -61,8 +61,12 @@ async def on_ready():
         cogs.Kiosk,
         cogs.Wizard,
         cogs.SIG,
+        cogs.Coops,
     ]:
         await bot.add_cog(cog(bot))
+
+    for guild in bot.get_cog("Coops").guilds:
+        await bot.tree.sync(guild=guild)
 
     global ONCE_LOCK  # pylint: disable=global-statement
     if not ONCE_LOCK:
