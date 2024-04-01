@@ -35,7 +35,8 @@ class Tools(Blimp.Cog):
 
         `limit` controls the amount of messages searched, the default is 20.
 
-        `any_bot` determines if only BLIMP's (the default) or all bots' messages are cleared."""
+        `any_bot` determines if only BLIMP's (the default) or all bots' messages are cleared.
+        """
 
         if not ctx.privileged_modify(ctx.channel):
             raise Unauthorized()
@@ -66,7 +67,8 @@ class Tools(Blimp.Cog):
         `category` is the channel category that should be inspected.
 
         `duration` is a [duration]($manual#durations). Channels that haven't received any messages
-        during this time are considered stale and will be printed. Defaults to two days."""
+        during this time are considered stale and will be printed. Defaults to two days.
+        """
 
         channels = []
         for channel in category.channels:
@@ -173,7 +175,8 @@ class Tools(Blimp.Cog):
 
         `channel` is the channel to edit. If left empty, BLIMP works with the current channel.
 
-        `text` is the new description of the channel. Standard Discord formatting works."""
+        `text` is the new description of the channel. Standard Discord formatting works.
+        """
 
         if not channel:
             channel = ctx.channel

@@ -223,7 +223,6 @@ class Blimp(commands.Bot):
                 self.log.info(f"Applied migration {number}")
 
         self.objects = BlimpObjects(self.database)
-
         super().__init__(self.dynamic_prefix, **kwargs)
 
     def add_command(self, command: commands.Command):

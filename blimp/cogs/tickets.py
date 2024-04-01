@@ -67,7 +67,8 @@ class Tickets(Blimp.Cog):
         the ticket instead of just being posted into `transcript_channel`.
 
         `per_user_limit` is an optional maximum number of Tickets a single unprivileged user can
-        have in this category. If they exceed it, BLIMP will refuse to open further Tickets."""
+        have in this category. If they exceed it, BLIMP will refuse to open further Tickets.
+        """
 
         if not ctx.privileged_modify(category.guild):
             raise Unauthorized()
@@ -141,7 +142,8 @@ class Tickets(Blimp.Cog):
         `name` is both the identifier of this class and the inital prefix of ticket channels.
 
         `description` is text that gets automatically posted into a new ticket in this category.
-        [Advanced Message Formatting]($manual#advanced-message-formatting) is available."""
+        [Advanced Message Formatting]($manual#advanced-message-formatting) is available.
+        """
 
         if not ctx.privileged_modify(category.guild):
             raise Unauthorized()
@@ -351,7 +353,8 @@ class Tickets(Blimp.Cog):
     ):
         """Delete a ticket and create a transcript.
 
-        `channel` is the ticket to delete. If left empty, BLIMP works with the current channel."""
+        `channel` is the ticket to delete. If left empty, BLIMP works with the current channel.
+        """
 
         if not channel:
             channel = ctx.channel

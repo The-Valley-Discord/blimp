@@ -27,7 +27,7 @@ class Kiosk(Blimp.Cog):
         result = []
         # iterate over pairs of args
         pairwise = iter(args)
-        for (emoji, role) in zip(pairwise, pairwise):
+        for emoji, role in zip(pairwise, pairwise):
             emoji_id = re.search(r"(\d{10,})>?$", emoji)
             if emoji_id:
                 emoji = int(emoji_id[1])
@@ -43,7 +43,8 @@ class Kiosk(Blimp.Cog):
     ) -> str:
         """Turn the stored data into a human-readable representation.
 
-        Expects any combination of [("unicode_emoji", <Role Object>), (custom emoji id, role id)]"""
+        Expects any combination of [("unicode_emoji", <Role Object>), (custom emoji id, role id)]
+        """
 
         result = []
         for maybe_emoji, maybe_role in pairs:
