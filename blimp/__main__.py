@@ -28,7 +28,7 @@ for source in config["log"]["suppress"].split(","):
         lambda row: row.levelno > getattr(logging, config["log"]["level"])
     )
 
-intents = discord.Intents.all()
+intents = discord.Intents.default() | discord.Intents.members | discord.Intents.message_content
 
 bot = Blimp(
     config,
