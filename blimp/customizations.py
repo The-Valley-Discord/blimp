@@ -166,6 +166,11 @@ class Blimp(commands.Bot):
                 return True
 
             kind = subject.__class__
+            if kind in (discord.TextChannel, discord.CategoryChannel, discord.Member, discord.Role) and self.guild != subject.guild:
+                raise Unauthorized()
+            elif kind == discord.Guild and self.guild != subject:
+                raise Unauthorized()
+
             if kind in (discord.TextChannel, discord.CategoryChannel):
                 return subject.permissions_for(self.author).manage_messages
             if kind == discord.Member:
